@@ -38,3 +38,16 @@ export function parseQueryParam(value: SearchParamValue): string {
   if (!raw) return "";
   return raw.trim().slice(0, MAX_QUERY_LENGTH);
 }
+
+/**
+ * `?type=` -> tipo valido ou `undefined`. Valida contra a lista real de tipos
+ * em vez de confiar na URL, entao `?type=banana` simplesmente nao filtra.
+ */
+export function parseTypeParam(
+  value: SearchParamValue,
+  knownTypes: readonly string[],
+): string | undefined {
+  const raw = firstValue(value)?.trim().toLowerCase();
+  if (!raw) return undefined;
+  return knownTypes.includes(raw) ? raw : undefined;
+}
