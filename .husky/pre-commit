@@ -1,0 +1,3 @@
+# Só o que está staged: pre-commit lento acaba sendo pulado com --no-verify.
+# A verificação completa (lint, typecheck e build) é responsabilidade do CI.
+pnpm exec lint-staged

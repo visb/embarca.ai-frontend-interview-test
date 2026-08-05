@@ -97,7 +97,7 @@ async function PokemonResults({ searchParams }: Pick<PageProps<"/">, "searchPara
         emptyAction={
           <Link
             href="/"
-            className="mt-2 rounded-full bg-zinc-900 px-4 py-2 text-sm font-medium text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:focus-visible:outline-zinc-100 dark:hover:bg-zinc-300"
+            className="mt-2 rounded-full bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300 dark:focus-visible:outline-zinc-100"
           >
             Limpar filtros
           </Link>

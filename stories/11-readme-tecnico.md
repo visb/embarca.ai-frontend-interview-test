@@ -9,6 +9,7 @@ decisões (por que catálogo em memória, por que `use cache`, por que filtro n�
 fica invisível pro avaliador.
 
 Decisões travadas:
+
 - **Não apagar o enunciado.** Mover para `docs/desafio.md` e escrever um `README.md` novo da
   solução, com link para o enunciado original. Perder o enunciado tira o contexto de avaliação.
 - O README referencia as stories de `stories/` como registro das decisões, sem duplicar o conteúdo
@@ -19,6 +20,7 @@ Decisões travadas:
 ## Desenho
 
 Novo `README.md`:
+
 - **O que é / demo** — resumo em 3 linhas + link da Vercel (preenchido na story 12) + badge de CI.
 - **Como rodar** — `pnpm install`, `pnpm dev`, `.env` (`NEXT_PUBLIC_SITE_URL`), versão do Node.
 - **Scripts** — tabela: `dev`, `build`, `lint`, `format`, `typecheck`, `test`, `test:e2e`.
@@ -26,7 +28,7 @@ Novo `README.md`:
   e a regra de separação UI × lógica: funções puras em `lib/`, I/O em `lib/api/`, componentes sem
   regra de negócio.
 - **Decisões técnicas** — a seção que o avaliador vai ler. Uma subseção curta por decisão, cada uma
-  com *contexto → escolha → alternativa descartada*:
+  com _contexto → escolha → alternativa descartada_:
   1. Server Components + `searchParams` na URL em vez de estado client + React Query.
   2. Renderização: prerender da listagem e das 100 rotas de detalhe (`generateStaticParams`);
      por que SSG/ISR e não SSR puro — dado de Pokédex é imutável.
@@ -44,13 +46,16 @@ Novo `README.md`:
 ## Validação
 
 Comandos:
+
 - `pnpm lint`, `pnpm build` — limpos (nada de código muda aqui, mas o gate vale).
 
 Casos a cobrir:
+
 - Não há código novo → não há teste unitário novo. O que trava esta story é a **verificação
   factual**: cada comando documentado é executado de fato antes do commit e funciona.
 
 Verificação manual (obrigatória, item a item):
+
 - Clonar num diretório limpo e seguir o README do zero: `pnpm install` → `pnpm dev` sobe.
 - Todo script da tabela existe no `package.json` e roda.
 - Todo link do README resolve (stories, `docs/desafio.md`, deploy, badge de CI).

@@ -8,6 +8,7 @@ detalhes e cenários de erro. O projeto hoje é o scaffold cru do `create-next-a
 esta é a primeira e destrava as demais.
 
 Decisões do usuário:
+
 - **Vitest + Testing Library** para unit/componente, **Playwright** para e2e.
 - Motivo do Playwright: os docs do Next 16 (`node_modules/next/dist/docs/01-app/02-guides/testing/index.md`)
   dizem explicitamente que async Server Components **não** são bem suportados por unit test e
@@ -41,6 +42,7 @@ Components.
 ## Validação
 
 Comandos:
+
 - `pnpm typecheck` — limpo.
 - `pnpm lint` — limpo (configs de teste não podem quebrar o ESLint do Next).
 - `pnpm test` — o teste de componente trivial passa.
@@ -48,11 +50,13 @@ Comandos:
 - `pnpm build` — limpo.
 
 Casos a cobrir nesta story:
+
 - Unit: um componente renderiza e a asserção de `jest-dom` (`toBeInTheDocument`) funciona — prova
   que setupFiles carregou.
 - E2E: `/` retorna 200 e mostra conteúdo — prova que o `webServer` do Playwright sobe o app.
 
 Verificação manual:
+
 - `pnpm test` roda em < 10s no scaffold vazio (se demorar muito, o `include`/`exclude` está errado).
 - `pnpm test:e2e` **não** tenta rodar os arquivos `.test.tsx` do Vitest e vice-versa.
 

@@ -21,7 +21,11 @@ export interface PaginationResult<T> {
  * Pagina fora do intervalo e clampada em vez de virar 404 — URL torta e mais
  * comum do que intencional, e uma tela quebrada seria pior.
  */
-export function paginate<T>(items: T[], page: number, perPage: number = PER_PAGE): PaginationResult<T> {
+export function paginate<T>(
+  items: T[],
+  page: number,
+  perPage: number = PER_PAGE,
+): PaginationResult<T> {
   const total = items.length;
   const totalPages = Math.max(1, Math.ceil(total / perPage));
   const safePage = Math.min(Math.max(Math.trunc(page) || 1, 1), totalPages);

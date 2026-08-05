@@ -7,6 +7,7 @@ para abrir sem clonar nada. Última story: só faz sentido publicar com CI verde
 pronto (story 11).
 
 Decisões travadas:
+
 - Deploy pelo **Git integration da Vercel** (import do repo), não por `vercel --prod` na mão:
   garante preview por PR e um build reproduzível igual ao do CI.
 - `NEXT_PUBLIC_SITE_URL` configurada em produção — é dela que o `metadataBase` da
@@ -32,6 +33,7 @@ o resto sob demanda — **não** desligar o prerender inteiro.
 ## Validação
 
 Comandos:
+
 - `pnpm build` local limpo **antes** de publicar — o build da Vercel não pode ser o primeiro build
   de produção que alguém vê.
 - `pnpm test` e `pnpm test:e2e` verdes.
@@ -39,6 +41,7 @@ Comandos:
   (`PLAYWRIGHT_TEST_BASE_URL=<url> pnpm test:e2e`) — smoke em produção com a suíte que já existe.
 
 Casos a cobrir (na URL de produção, não em localhost):
+
 - `/` lista os cards com as **imagens carregando** (falha aqui = `remotePatterns`).
 - `/?q=pika&type=electric` renderiza o estado filtrado direto pela URL.
 - `/pokemon/pikachu` responde 200 e vem prerenderizada (HTML já com o conteúdo no view-source).
@@ -47,6 +50,7 @@ Casos a cobrir (na URL de produção, não em localhost):
 - `/sitemap.xml` e `/robots.txt` respondem 200.
 
 Verificação manual:
+
 - Abrir a URL no celular (responsividade real, não só devtools).
 - Conferir no log de build da Vercel que as 100 rotas de detalhe foram geradas e que não houve
   erro/timeout de rede com a PokeAPI.

@@ -7,6 +7,7 @@ número/ID**, com estados de **loading, erro e lista vazia**. É a primeira tela
 vocabulário de UI que as stories seguintes reusam.
 
 Decisões travadas:
+
 - Página é **Server Component** consumindo `getPokemonCatalog()` de
   [02-camada-de-servicos-pokeapi](./02-camada-de-servicos-pokeapi.md). Sem `useEffect` de fetch.
 - Loading via `app/loading.tsx` (streaming do App Router), erro via `app/error.tsx` (Client
@@ -41,11 +42,13 @@ virtualizar seria complexidade sem ganho medível — e a paginação da story 0
 ## Validação
 
 Comandos:
+
 - `pnpm lint`, `pnpm typecheck`, `pnpm build` — limpos.
 - `pnpm test` — componentes (`PokemonCard`, `PokemonGrid`, `EmptyState`, `TypeBadge`) com RTL.
 - `pnpm test:e2e` — fluxo da listagem.
 
 Casos a cobrir:
+
 - `PokemonCard`: mostra nome, `#0025`, alt textual não vazio na imagem, e um badge por tipo
   (pokémon de 1 tipo e de 2 tipos).
 - `PokemonGrid`: com N itens renderiza N cards; com `[]` renderiza o `EmptyState` e **nenhum** card.
@@ -55,6 +58,7 @@ Casos a cobrir:
   botão de retry — e não uma tela branca.
 
 Verificação manual (`pnpm dev`):
+
 - `/` — grid responsivo em 375px, 768px e 1440px; sem scroll horizontal.
 - Throttling de rede → o skeleton do `loading.tsx` aparece antes do conteúdo.
 

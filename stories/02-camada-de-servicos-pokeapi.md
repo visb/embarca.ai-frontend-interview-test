@@ -11,6 +11,7 @@ dorsal: todas as telas consomem daqui.
 nome, imagem, tipos e ID. Logo, a listagem obriga 1 (índice) + 100 (detalhes) requisições.
 
 Decisões travadas:
+
 - Montar um **catálogo normalizado em memória** dos 100 primeiros pokémons (`id`, `name`, `types`,
   `spriteUrl`), resolvido uma vez e cacheado. Busca, filtro e paginação operam sobre esse catálogo.
 - Cache via **Cache Components** do Next 16: `cacheComponents: true` no `next.config.ts` e diretiva
@@ -50,11 +51,13 @@ resultado é cacheado e o limite fixo de 100 vem do próprio enunciado.
 ## Validação
 
 Comandos:
+
 - `pnpm typecheck`, `pnpm lint`, `pnpm build` — limpos. O `build` é o gate real do `cacheComponents`:
   se a diretiva estiver mal aplicada, ele falha.
 - `pnpm test` — unit dos mappers e do cliente HTTP (fetch mockado via `vi.stubGlobal`).
 
 Casos a cobrir:
+
 - `mappers`: extrai `id` correto de `.../pokemon/25/`; monta `spriteUrl`; ordena tipos por `slot`;
   cai no fallback quando a arte oficial é `null`; limita moves a 5 preservando a ordem.
 - `http`: 200 devolve o payload parseado; 404 lança `PokeApiError` com `status: 404`; 500 lança com
@@ -64,6 +67,7 @@ Casos a cobrir:
 - `getPokemonByName`: nome inexistente → erro 404 tipado.
 
 Verificação manual:
+
 - `pnpm build` e conferir no log que a home foi prerenderizada; segundo `pnpm start` não dispara
   novas chamadas à PokeAPI (cache funcionando).
 

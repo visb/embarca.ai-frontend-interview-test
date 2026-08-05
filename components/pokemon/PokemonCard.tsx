@@ -29,7 +29,7 @@ export function PokemonCard({ pokemon, listingQuery = "" }: PokemonCardProps) {
         // Nome explicito: lido em sequencia, o conteudo do card sairia como
         // "#0025 Pikachu electric" — numero cru e tipo solto no meio do nome.
         aria-label={`${displayName}, numero ${pokemon.id}`}
-        className="flex h-full flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-4 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 hover:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-950 dark:focus-visible:outline-zinc-100 dark:hover:border-zinc-600"
+        className="flex h-full flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-4 transition-colors hover:border-zinc-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-zinc-600 dark:focus-visible:outline-zinc-100"
       >
         <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-zinc-100 dark:bg-zinc-900">
           {pokemon.spriteUrl ? (

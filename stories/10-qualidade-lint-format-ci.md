@@ -7,6 +7,7 @@ Diferenciais do README: "ESLint, Prettier, Husky" e "Pipeline CI". O projeto já
 subir código quebrado.
 
 Decisões travadas:
+
 - Story vem **depois** das features (01–09) de propósito: assim o CI já nasce rodando a suíte
   inteira de verdade, em vez de um pipeline vazio que vai sendo remendado.
 - Hook de pre-commit roda **lint-staged** (só o que mudou) — pre-commit lento acaba sendo pulado
@@ -34,11 +35,13 @@ Decisões travadas:
 ## Validação
 
 Comandos:
+
 - `pnpm format:check` — limpo em todo o repo (a primeira rodada de `format` entra nesta story).
 - `pnpm lint`, `pnpm typecheck`, `pnpm build`, `pnpm test`, `pnpm test:e2e` — todos verdes, já que
   o CI vai exigir exatamente isso.
 
 Casos a cobrir:
+
 - Commit de arquivo mal formatado é reformatado pelo hook antes de entrar (verificação manual, é
   comportamento de tooling, não de código).
 - Regra nova do ESLint pega o caso que deveria pegar: um `any` explícito e um `.only` de teste
@@ -47,6 +50,7 @@ Casos a cobrir:
   o risco real aqui.
 
 Verificação manual:
+
 - Abrir um PR de rascunho e conferir os 3 jobs no GitHub; em falha de e2e, o artefato do relatório
   baixa e abre.
 

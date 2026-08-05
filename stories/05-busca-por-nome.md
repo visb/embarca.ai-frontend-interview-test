@@ -6,6 +6,7 @@ Requisito 2 do README: buscar por nome, a paginação se adaptar ao resultado e 
 "sem resultado".
 
 Decisões travadas:
+
 - Termo na URL (`/?q=pika`), mesmo padrão da [04-paginacao](./04-paginacao.md). Filtragem acontece
   no Server Component sobre o catálogo cacheado — **não** chama a PokeAPI a cada tecla ("evitar
   chamadas desnecessárias", requisito 5).
@@ -38,12 +39,14 @@ Trade-off aceito: sem fuzzy match / tolerância a typo. Escopo de 100 nomes curt
 ## Validação
 
 Comandos:
+
 - `pnpm lint`, `pnpm typecheck`, `pnpm build` — limpos.
 - `pnpm test` — unit de `filterByName`/`buildQuery` + componente `SearchInput` (RTL + `user-event`
-  + timers fake para o debounce).
+  - timers fake para o debounce).
 - `pnpm test:e2e` — fluxo de busca.
 
 Casos a cobrir:
+
 - `filterByName`: `''` e `'   '` devolvem tudo; case-insensitive (`PIKA` acha pikachu); substring
   no meio do nome; nome com hífen (`mr-mime`) achado por `mr` e por `mime`; termo sem match → `[]`.
 - `buildQuery`: mudar `q` remove `page`; param vazio some da URL (não fica `?q=`); params não
@@ -55,6 +58,7 @@ Casos a cobrir:
   paginação e sem erro; estar em `?page=3` e buscar volta para a página 1.
 
 Verificação manual (`pnpm dev`):
+
 - Digitação fluida, sem piscar a grade inteira a cada tecla.
 
 > **Gate (trava a story):** todo caminho novo ou alterado tem cobertura correspondente — nenhum

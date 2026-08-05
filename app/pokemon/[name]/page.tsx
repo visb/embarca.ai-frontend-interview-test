@@ -23,9 +23,7 @@ export async function generateStaticParams() {
  * Metadata com dados reais do pokemon — e o que gera valor de SEO de verdade.
  * Reusa a mesma funcao cacheada da pagina, entao nao custa request extra.
  */
-export async function generateMetadata(
-  props: PageProps<"/pokemon/[name]">,
-): Promise<Metadata> {
+export async function generateMetadata(props: PageProps<"/pokemon/[name]">): Promise<Metadata> {
   const { name } = await props.params;
 
   try {

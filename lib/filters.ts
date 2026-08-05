@@ -14,7 +14,10 @@ export interface ListingFilters {
  * Tipo vazio ou desconhecido devolve a lista intacta — `?type=banana` e
  * ignorado, nao vira erro.
  */
-export function filterByType<T extends Pick<PokemonSummary, "types">>(items: T[], type?: string): T[] {
+export function filterByType<T extends Pick<PokemonSummary, "types">>(
+  items: T[],
+  type?: string,
+): T[] {
   if (!type) return items;
   return items.filter((item) => item.types.includes(type));
 }

@@ -34,11 +34,13 @@ para a página válida mais próxima. Página quebrada por URL torta é pior UX 
 ## Validação
 
 Comandos:
+
 - `pnpm lint`, `pnpm typecheck`, `pnpm build` — limpos.
 - `pnpm test` — unit de `paginate`/`parsePageParam` + componente `Pagination`.
 - `pnpm test:e2e` — navegação entre páginas.
 
 Casos a cobrir:
+
 - `paginate`: 100 itens → 5 páginas; página 1 devolve itens 1–20; página 5 devolve 81–100;
   `page=0` e `page=-3` clampam para 1; `page=99` clampa para 5; lista vazia → `totalPages: 1`,
   `items: []`; resto não exato (ex.: 43 itens → 3 páginas, última com 3).
@@ -50,6 +52,7 @@ Casos a cobrir:
   `/?page=3` direto já renderiza a terceira fatia (funciona sem JS/hidratação).
 
 Verificação manual (`pnpm dev`):
+
 - Controles de paginação alcançáveis por teclado (Tab) e visíveis em 375px.
 
 > **Gate (trava a story):** todo caminho novo ou alterado tem cobertura correspondente — nenhum

@@ -6,6 +6,7 @@ Requisito 3 do README: rota `/pokemon/[name]` exibindo nome, imagem, tipos, habi
 movimentos principais.
 
 Decisões travadas:
+
 - Rota dinâmica com `generateStaticParams` a partir do catálogo dos 100 → as 100 páginas são
   prerenderizadas. Justificativa técnica pro README (story 11): dado imutável, ganho de SEO e
   navegação instantânea; nome desconhecido ainda funciona sob demanda.
@@ -39,12 +40,14 @@ Detalhe da versão: `params` é **Promise** neste Next e precisa de `await`, inc
 ## Validação
 
 Comandos:
+
 - `pnpm lint`, `pnpm typecheck`, `pnpm build` — no log do build devem aparecer as rotas
   `/pokemon/[name]` prerenderizadas (prova o `generateStaticParams`).
 - `pnpm test` — componente `PokemonDetail` + mapper do detalhe.
 - `pnpm test:e2e` — fluxo de detalhe.
 
 Casos a cobrir:
+
 - `PokemonDetail`: renderiza nome, ID formatado, imagem com `alt`, todos os tipos, todas as
   habilidades, **no máximo 5** movimentos (mesmo recebendo 200) e nada quebra com pokémon sem
   habilidade oculta.
@@ -55,6 +58,7 @@ Casos a cobrir:
   para uma listagem filtrada preserva `?q=`/`?type=`.
 
 Verificação manual (`pnpm dev`):
+
 - `/pokemon/pikachu` em 375px — imagem não estoura, seções empilham.
 - Navegação lista → detalhe → voltar é instantânea (prefetch dos links).
 

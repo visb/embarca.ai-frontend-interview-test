@@ -7,6 +7,7 @@ das telas prontas (03–07): a11y aplicada em cima do produto completo pega os p
 (ordem de foco, anúncio de mudança de lista) que revisão por componente isolado não pega.
 
 Decisões travadas:
+
 - Alvo: **WCAG 2.1 AA** nos itens verificáveis — contraste, foco visível, nome acessível, teclado,
   landmarks.
 - Auditoria automatizada com **`@axe-core/playwright`** dentro da suíte e2e já existente, em vez de
@@ -35,11 +36,13 @@ Decisões travadas:
 ## Validação
 
 Comandos:
+
 - `pnpm lint`, `pnpm typecheck`, `pnpm build` — limpos.
 - `pnpm test` — unit dos atributos acessíveis (queries por role/label, não por classe CSS).
 - `pnpm test:e2e` — `a11y.spec.ts` sem violações serious/critical nas 4 rotas.
 
 Casos a cobrir:
+
 - RTL: card é encontrado por `getByRole('link', { name: /pikachu/i })`; input por
   `getByLabelText`; select por `getByLabelText`; paginação por `getByRole('navigation', { name })`.
 - E2E teclado: Tab a partir do topo alcança skip link → busca → filtro → primeiro card →
@@ -48,6 +51,7 @@ Casos a cobrir:
 - Axe: zero violações serious/critical em `/`, `/?q=zzzz`, `/?type=fire`, `/pokemon/pikachu`.
 
 Verificação manual:
+
 - Navegar a app inteira **sem mouse**, do início ao detalhe e de volta.
 - Zoom 200% no navegador: nada corta nem sobrepõe.
 

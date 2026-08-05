@@ -16,7 +16,10 @@ export function TypeFilter({ types }: TypeFilterProps) {
 
   return (
     <div className="flex w-full flex-col gap-1.5 sm:max-w-3xs">
-      <label htmlFor="pokemon-type" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+      <label
+        htmlFor="pokemon-type"
+        className="text-sm font-medium text-zinc-700 dark:text-zinc-300"
+      >
         Filtrar por tipo
       </label>
       {/*

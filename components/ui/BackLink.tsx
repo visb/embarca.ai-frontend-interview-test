@@ -15,7 +15,7 @@ export function BackLink({ query = "" }: BackLinkProps) {
   return (
     <Link
       href={listingHref(query)}
-      className="inline-flex items-center gap-1 text-sm font-medium text-zinc-700 underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 hover:text-zinc-950 dark:text-zinc-300 dark:focus-visible:outline-zinc-100 dark:hover:text-zinc-50"
+      className="inline-flex items-center gap-1 text-sm font-medium text-zinc-700 underline underline-offset-4 hover:text-zinc-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 dark:text-zinc-300 dark:hover:text-zinc-50 dark:focus-visible:outline-zinc-100"
     >
       <span aria-hidden="true">&larr;</span> Voltar para a listagem
     </Link>

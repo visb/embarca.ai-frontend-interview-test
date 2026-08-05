@@ -6,6 +6,7 @@ Requisito 2 do README: filtrar por tipo, **funcionar junto com a busca**, pagina
 cenário sem resultado tratado. Fecha o trio busca + filtro + paginação.
 
 Decisões travadas:
+
 - Opções do dropdown vêm de `getTypes()` (`GET /type`, cacheado — story 02). A **filtragem em si é
   em memória** sobre o catálogo, não via `/type/{name}`. Motivo: o catálogo já tem os tipos, e
   cruzar dois conjuntos vindos de endpoints diferentes com a busca ativa geraria inconsistência e
@@ -34,12 +35,14 @@ Decisões travadas:
 ## Validação
 
 Comandos:
+
 - `pnpm lint`, `pnpm typecheck`, `pnpm build` — limpos.
 - `pnpm test` — unit de `filterByType`/`applyFilters`/`parseTypeParam` + componentes `TypeFilter` e
   `FilterBar`.
 - `pnpm test:e2e` — fluxo combinado.
 
 Casos a cobrir:
+
 - `filterByType`: pokémon de tipo duplo aparece nos **dois** tipos; tipo sem match → `[]`;
   `type` vazio ou desconhecido não filtra.
 - `applyFilters`: `q` + `type` juntos aplicam interseção (não união); só `q`; só `type`; nenhum
@@ -54,6 +57,7 @@ Casos a cobrir:
   URL com os três params colada direto renderiza o estado certo.
 
 Verificação manual (`pnpm dev`):
+
 - Filtrar estando na página 4 volta para a 1 sem tela vazia intermediária.
 - `FilterBar` empilha corretamente em 375px.
 

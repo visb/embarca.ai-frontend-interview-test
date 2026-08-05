@@ -5,6 +5,20 @@ import nextTs from "eslint-config-next/typescript";
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
+  {
+    // Regras que travam problema real. Estilo e com o Prettier — repetir isso
+    // aqui so gera conflito entre as duas ferramentas.
+    rules: {
+      // `any` desliga a checagem justamente onde ela mais importa: no limite
+      // entre a resposta crua da PokeAPI e o modelo de dominio.
+      "@typescript-eslint/no-explicit-any": "error",
+      // Import de tipo que sobra no bundle e peso morto em Client Component.
+      "@typescript-eslint/consistent-type-imports": [
+        "error",
+        { prefer: "type-imports", fixStyle: "separate-type-imports" },
+      ],
+    },
+  },
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:

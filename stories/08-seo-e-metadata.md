@@ -8,6 +8,7 @@ Server Components (`node_modules/next/dist/docs/01-app/01-getting-started/14-met
 Ler antes de codar. O `<Head>` do Pages Router aqui seria erro, não "básico".
 
 Decisões travadas:
+
 - Story separada das telas para o SEO ser tratado como camada consistente (title template,
   canonical, OG) em vez de metadata solta e divergente por página.
 - Página de detalhe usa `generateMetadata` com dados reais do pokémon (título com nome e ID,
@@ -32,10 +33,12 @@ Decisões travadas:
 ## Validação
 
 Comandos:
+
 - `pnpm lint`, `pnpm typecheck`, `pnpm build` — limpos.
 - `pnpm test:e2e` — asserções de `<head>`.
 
 Casos a cobrir:
+
 - E2E (`e2e/seo.spec.ts`): `/` tem `<title>` e `<meta name="description">` não vazios;
   `/pokemon/pikachu` tem title contendo "Pikachu" e og:image absoluta (começa com `http`);
   `<html lang="pt-BR">`; `/sitemap.xml` responde 200 e contém `/pokemon/pikachu`;
@@ -43,6 +46,7 @@ Casos a cobrir:
 - `generateMetadata` com nome inexistente não derruba a rota (a página ainda responde 404 limpo).
 
 Verificação manual:
+
 - `pnpm build && pnpm start`, ver o `view-source` de `/pokemon/pikachu`: as tags de metadata estão
   no HTML servido, não injetadas só no cliente.
 

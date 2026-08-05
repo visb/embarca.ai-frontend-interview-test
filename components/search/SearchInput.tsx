@@ -69,7 +69,7 @@ export function SearchInput() {
           <button
             type="button"
             onClick={() => handleChange("")}
-            className="absolute top-1/2 right-2 -translate-y-1/2 rounded px-2 py-1 text-xs font-medium text-zinc-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 hover:text-zinc-900 dark:text-zinc-400 dark:focus-visible:outline-zinc-100 dark:hover:text-zinc-100"
+            className="absolute top-1/2 right-2 -translate-y-1/2 rounded px-2 py-1 text-xs font-medium text-zinc-600 hover:text-zinc-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 dark:focus-visible:outline-zinc-100"
           >
             Limpar
           </button>
