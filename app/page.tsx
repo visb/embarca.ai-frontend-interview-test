@@ -60,12 +60,19 @@ async function PokemonResults({ searchParams }: Pick<PageProps<"/">, "searchPara
   if (q) baseParams.q = q;
   if (type) baseParams.type = type;
 
+  // Query levada pelos cards, para o detalhe saber com quais filtros voltar.
+  const listingQuery = new URLSearchParams({
+    ...baseParams,
+    ...(result.page > 1 ? { page: String(result.page) } : {}),
+  }).toString();
+
   return (
     <div className="flex flex-col gap-4">
       <ResultCount total={result.total} />
 
       <PokemonGrid
         items={result.items}
+        listingQuery={listingQuery}
         emptyTitle="Nenhum pokemon encontrado"
         emptyDescription={buildEmptyDescription(q, type)}
         emptyAction={

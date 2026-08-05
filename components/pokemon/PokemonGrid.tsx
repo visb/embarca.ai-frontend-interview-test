@@ -10,6 +10,8 @@ interface PokemonGridProps {
   emptyTitle?: string;
   emptyDescription?: string;
   emptyAction?: ReactNode;
+  /** Query atual da listagem, repassada aos cards para o link de volta. */
+  listingQuery?: string;
 }
 
 export function PokemonGrid({
@@ -17,6 +19,7 @@ export function PokemonGrid({
   emptyTitle = "Nenhum pokemon encontrado",
   emptyDescription,
   emptyAction,
+  listingQuery,
 }: PokemonGridProps) {
   if (items.length === 0) {
     return (
@@ -30,7 +33,7 @@ export function PokemonGrid({
     <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {items.map((pokemon) => (
         <li key={pokemon.id}>
-          <PokemonCard pokemon={pokemon} />
+          <PokemonCard pokemon={pokemon} listingQuery={listingQuery} />
         </li>
       ))}
     </ul>
