@@ -2,20 +2,18 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
-import { PokemonDetail } from "@/components/pokemon/PokemonDetail";
-import { BackLink } from "@/components/ui/BackLink";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { getPokemonByName, getPokemonCatalog } from "@/lib/api/pokemon";
-import { formatPokedexNumber, formatPokemonName } from "@/lib/format";
-import { buildQuery } from "@/lib/url";
+import { DetailBackLink } from "@/features/pokemon-detail/components/DetailBackLink";
+import { PokemonDetail } from "@/features/pokemon-detail/components/PokemonDetail";
+import { getDetail, listDetailParams } from "@/features/pokemon-detail/data";
+import { buildDetailMetadata } from "@/features/pokemon-detail/metadata";
 
 /**
  * Prerenderiza as 100 rotas do catalogo: dado imutavel, ganho de SEO e
  * navegacao instantanea. Nome fora da lista continua funcionando sob demanda.
  */
-export async function generateStaticParams() {
-  const catalog = await getPokemonCatalog();
-  return catalog.map((pokemon) => ({ name: pokemon.name }));
+export function generateStaticParams() {
+  return listDetailParams();
 }
 
 /**
@@ -24,24 +22,8 @@ export async function generateStaticParams() {
  */
 export async function generateMetadata(props: PageProps<"/pokemon/[name]">): Promise<Metadata> {
   const { name } = await props.params;
-  const pokemon = await getPokemonByName(name);
 
-  // Nome inexistente nao pode derrubar a rota: metadata neutra e a pagina segue
-  // para o `notFound()`.
-  if (!pokemon) return { title: "Pokemon nao encontrado" };
-
-  const displayName = formatPokemonName(pokemon.name);
-  const title = `${displayName} ${formatPokedexNumber(pokemon.id)}`;
-  const description = `${displayName} e um pokemon do tipo ${pokemon.types.join(" e ")}. Veja habilidades e movimentos.`;
-  const images = pokemon.spriteUrl ? [{ url: pokemon.spriteUrl, alt: displayName }] : undefined;
-
-  return {
-    title,
-    description,
-    alternates: { canonical: `/pokemon/${pokemon.name}` },
-    openGraph: { title, description, type: "article", images },
-    twitter: { card: "summary_large_image", title, description, images },
-  };
+  return buildDetailMetadata(await getDetail(name));
 }
 
 export default async function PokemonPage(props: PageProps<"/pokemon/[name]">) {
@@ -52,7 +34,7 @@ export default async function PokemonPage(props: PageProps<"/pokemon/[name]">) {
   // Como as 100 rotas validas sao prerenderizadas, o caso so ocorre em URL
   // digitada a mao.
   const { name } = await props.params;
-  const pokemon = await getPokemonByName(name);
+  const pokemon = await getDetail(name);
 
   // `null` e so "esse nome nao existe". Falha de verdade continua sendo lancada
   // la dentro e sobe para o `error.tsx`.
@@ -70,19 +52,4 @@ export default async function PokemonPage(props: PageProps<"/pokemon/[name]">) {
       <PokemonDetail pokemon={pokemon} />
     </main>
   );
-}
-
-async function DetailBackLink({
-  searchParams,
-}: Pick<PageProps<"/pokemon/[name]">, "searchParams">) {
-  const params = await searchParams;
-
-  // Reaproveita os filtros que o card carregou na query do link.
-  const query = buildQuery("", {
-    q: typeof params.q === "string" ? params.q : null,
-    type: typeof params.type === "string" ? params.type : null,
-    page: typeof params.page === "string" ? params.page : null,
-  });
-
-  return <BackLink query={query} />;
 }

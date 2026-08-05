@@ -25,7 +25,6 @@ const UI_FILES = ["components/**/*.tsx", "features/**/*.tsx", "app/**/*.tsx"];
 const OVERSIZED_LEGACY = [
   "components/search/TypeFilter.tsx",
   "components/pokemon/VirtualGrid.tsx",
-  "components/pokemon/PokemonDetail.tsx",
   "components/search/SearchInput.tsx",
 ];
 

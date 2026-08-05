@@ -1,7 +1,7 @@
 import { render, screen, within } from "@testing-library/react";
 import { describe, expect, test } from "vitest";
 
-import { PokemonDetail } from "@/components/pokemon/PokemonDetail";
+import { PokemonDetail } from "@/features/pokemon-detail/components/PokemonDetail";
 import { MAX_MOVES, toPokemonDetail } from "@/lib/api/mappers";
 import {
   makeAbilitySlots,
