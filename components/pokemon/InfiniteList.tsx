@@ -106,8 +106,10 @@ export function InfiniteList({
       />
 
       {/*
-        `!loading` no `enabled` nao e so guarda: e o que faz o sentinel
-        reavaliar quando a fatia termina de chegar e a base ainda esta visivel.
+        `!loading` no `enabled` nao e so guarda: a volta dele para `true` e o
+        que faz o sentinel se rearmar e reavaliar a ancora depois que a fatia
+        entrou no layout. Sem esse ciclo o observer ficaria em silencio com a
+        base ainda visivel.
       */}
       <LoadMoreSentinel enabled={hasMore && !error && !loading} onVisible={loadMore}>
         <ListStatus

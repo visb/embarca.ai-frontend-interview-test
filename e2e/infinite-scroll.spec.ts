@@ -9,7 +9,7 @@ import {
   tabUntilFocused,
   typeFilter,
 } from "./locators";
-import { allowOnly, holdRequests, isSliceRequest } from "./network";
+import { holdRequests, isSliceRequest } from "./network";
 
 /**
  * Scroll infinito e o unico fluxo do app com estado acumulado no cliente. Os
@@ -22,19 +22,48 @@ import { allowOnly, holdRequests, isSliceRequest } from "./network";
  * Quantos itens ja foram carregados continua sendo a garantia desta suite.
  */
 
-test("rolar ate a base anexa a fatia seguinte e registra o cursor na URL", async ({ page }) => {
+test("rolar ate a base anexa uma fatia, e uma so", async ({ page }) => {
   await page.goto("/");
   await expect.poll(() => listSize(page)).toBe(20);
 
-  // Uma fatia so: a segunda fica segura no ar. Sem isso a fatia que chega deixa
-  // a base visivel de novo e a terceira entra antes da assercao — o app esta
-  // certo, mas o passo que este teste observa desaparece.
-  await allowOnly(page, isSliceRequest, 1);
-
   await loadMoreButton(page).scrollIntoViewIfNeeded();
 
+  // Sem segurar requisicao nenhuma: uma rolagem ate a base e uma fatia. O
+  // sentinel so volta a disparar depois de reavaliar a ancora com o layout novo
+  // assentado, entao a fatia que chega nao encadeia a seguinte sozinha.
   await expect.poll(() => listSize(page)).toBe(40);
   await expect(page).toHaveURL("/?page=2");
+
+  // Segue valendo depois de a fatia assentar: a contagem nao escorrega sozinha.
+  await expect.poll(() => listSize(page)).toBe(40);
+});
+
+test("cada rolagem ate a base avanca uma fatia, ate o fim da lista", async ({ page }) => {
+  await page.goto("/");
+  await expect.poll(() => listSize(page)).toBe(20);
+
+  for (const esperado of [40, 60, 80, 100]) {
+    await loadMoreButton(page).scrollIntoViewIfNeeded();
+    await expect.poll(() => listSize(page)).toBe(esperado);
+  }
+
+  await expect(loadMoreButton(page)).toBeHidden();
+  await expect(page.getByText("100 de 100 pokemons")).toBeVisible();
+});
+
+test("tabular pelos cards nao carrega fatia nenhuma", async ({ page }) => {
+  await page.goto("/");
+  await expect.poll(() => listSize(page)).toBe(20);
+
+  // Tabular rola a pagina, e era isso que realimentava o ciclo: quem navega por
+  // teclado recebia o catalogo inteiro sem ter pedido.
+  await tabUntilFocused(page, cards(page).first().getByRole("link"));
+  for (let press = 0; press < 10; press += 1) {
+    await page.keyboard.press("Tab");
+  }
+
+  expect(await listSize(page)).toBe(20);
+  await expect(page).toHaveURL("/");
 });
 
 test("rolar ate o fim tira o gatilho da tela e anuncia o fim da lista", async ({ page }) => {
