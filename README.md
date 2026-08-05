@@ -8,7 +8,7 @@ com listagem paginada, busca por nome, filtro por tipo e página de detalhes.
 O enunciado original do desafio está em [`docs/desafio.md`](./docs/desafio.md). As decisões de
 cada etapa estão registradas em [`stories/`](./stories), uma story por entrega.
 
-**Demo:** _(preenchido na story de deploy — ver [12-deploy-vercel](./stories/12-deploy-vercel.md))_
+**Demo:** https://embarca-ai-frontend-interview-test.vercel.app/
 
 ## Como rodar
 
