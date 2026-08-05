@@ -41,6 +41,18 @@ export async function listSize(page: Page): Promise<number> {
   return setSize === null ? cards(page).count() : Number(setSize);
 }
 
+/**
+ * Espera a listagem hidratar.
+ *
+ * `aria-setsize` so aparece quando a grade virtual assume, o que acontece
+ * depois da hidratacao — e o sinal observavel de que os controles da pagina ja
+ * respondem. Interagir antes disso perde o evento em silencio: o React repoe o
+ * valor do render inicial no commit, e o teste falha longe da causa.
+ */
+export async function waitForHydration(page: Page): Promise<void> {
+  await expect(cards(page).first()).toHaveAttribute("aria-setsize", /^\d+$/);
+}
+
 export function searchInput(page: Page): Locator {
   return page.getByLabel("Buscar por nome");
 }

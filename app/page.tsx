@@ -98,8 +98,16 @@ async function PokemonResults({ searchParams }: Pick<PageProps<"/">, "searchPara
       emptyDescription={buildEmptyDescription(q, type)}
       // Mesmo componente da barra de filtros: limpar daqui tambem zera os
       // controles na hora e liga o spinner, em vez de navegar em silencio.
+      //
+      // O `label` existe porque os dois links convivem na tela com o mesmo
+      // texto e o mesmo destino: na lista de links do leitor de tela seriam
+      // dois "Limpar filtros" seguidos, sem nada dizendo qual e qual. O nome
+      // estendido comeca pelo texto visivel para nao quebrar comando de voz.
       emptyAction={
-        <ClearFiltersAction className="mt-2 rounded-full bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300 dark:focus-visible:outline-zinc-100" />
+        <ClearFiltersAction
+          label="Limpar filtros e ver a lista completa"
+          className="mt-2 rounded-full bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300 dark:focus-visible:outline-zinc-100"
+        />
       }
     />
   );

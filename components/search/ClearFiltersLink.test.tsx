@@ -60,6 +60,16 @@ describe("ClearFiltersLink", () => {
     expect(link()).toHaveAttribute("href", "/");
   });
 
+  test("o nome acessivel e exatamente o texto visivel, sem rotulo estendido", () => {
+    setup("/?q=char");
+
+    // Este e o controle canonico da barra. Quem carrega o nome estendido e o
+    // par do estado vazio, para os dois serem distinguiveis fora de contexto.
+    // Nome em string casa por igualdade: um rotulo estendido nao passaria aqui.
+    expect(screen.getByRole("link", { name: "Limpar filtros" })).toBeInTheDocument();
+    expect(screen.getByRole("link")).not.toHaveAttribute("aria-label");
+  });
+
   test("some no clique, sem esperar a URL commitar", async () => {
     const user = setup("/?q=char");
 

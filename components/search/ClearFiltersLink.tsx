@@ -14,6 +14,10 @@ import { useFilterTransition } from "@/components/search/FilterTransition";
  * segura a URL antiga durante toda a espera, e um "Limpar filtros" clicavel
  * sobre uma lista que ja esta sendo limpa e o mesmo tipo de mentira que o
  * `<select>` mostrando o tipo anterior.
+ *
+ * Fica com o nome acessivel curto por ser o controle canonico, ao lado dos
+ * outros. O par do estado vazio usa nome estendido de proposito — os dois
+ * convivem na tela e precisam ser distinguiveis fora do contexto visual.
  */
 export function ClearFiltersLink() {
   const searchParams = useSearchParams();

@@ -17,13 +17,13 @@ vi.mock("next/navigation", () => ({
   }),
 }));
 
-function setup() {
+function setup(label?: string) {
   navigations.length = 0;
   const user = userEvent.setup();
 
   render(
     <FilterTransitionProvider>
-      <ClearFiltersAction className="pilula" />
+      <ClearFiltersAction className="pilula" label={label} />
     </FilterTransitionProvider>,
   );
 
@@ -98,6 +98,42 @@ describe("ClearFiltersAction", () => {
     await user.pointer({ target: link(), keys: "[MouseMiddle]" });
 
     expect(navigations).toEqual([]);
+  });
+
+  test("sem rotulo proprio o nome acessivel e o texto visivel", () => {
+    setup();
+
+    // Nome em string casa por igualdade: um rotulo estendido nao passaria aqui.
+    expect(screen.getByRole("link", { name: "Limpar filtros" })).toBeInTheDocument();
+  });
+
+  test("com rotulo proprio o nome acessivel diz para onde a acao leva", () => {
+    setup("Limpar filtros e ver a lista completa");
+
+    // Dois links com o mesmo nome e o mesmo destino na mesma tela nao violam
+    // WCAG, mas na lista de links do leitor de tela viram dois "Limpar filtros"
+    // seguidos, sem nada distinguindo qual e qual.
+    expect(
+      screen.getByRole("link", { name: "Limpar filtros e ver a lista completa" }),
+    ).toBeInTheDocument();
+  });
+
+  test("o rotulo estendido nao esconde o texto visivel", () => {
+    setup("Limpar filtros e ver a lista completa");
+
+    const rotulo = screen.getByRole("link").getAttribute("aria-label") ?? "";
+
+    // Criterio 2.5.3 (Label in Name): comando de voz diz o que se le na tela.
+    expect(screen.getByRole("link")).toHaveTextContent("Limpar filtros");
+    expect(rotulo).toContain("Limpar filtros");
+  });
+
+  test("o rotulo nao muda o comportamento do clique", async () => {
+    const user = setup("Limpar filtros e ver a lista completa");
+
+    await user.click(screen.getByRole("link"));
+
+    expect(navigations).toEqual(["/"]);
   });
 
   test("Enter com o link focado limpa, como qualquer clique de teclado", async () => {

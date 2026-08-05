@@ -8,6 +8,7 @@ import {
   loadMoreButton,
   searchInput,
   tabUntilFocused,
+  waitForHydration,
 } from "./locators";
 import { holdRequests, isSliceRequest } from "./network";
 
@@ -50,6 +51,27 @@ for (const route of ROUTES) {
     ).toEqual([]);
   });
 }
+
+test("os dois links de limpar filtros tem nomes acessiveis distintos", async ({ page }) => {
+  await page.goto("/?q=zzzz");
+  await expect(page.getByText("Nenhum pokemon encontrado")).toBeVisible();
+
+  // Nome duplicado nao e violacao de WCAG, entao o axe nao pega: dois links com
+  // o mesmo rotulo e o mesmo destino sao legais e, ainda assim, ilegiveis na
+  // lista de links do leitor de tela.
+  const nomes = await page
+    .getByRole("link")
+    .filter({ hasText: "Limpar filtros" })
+    .evaluateAll((links) =>
+      links.map((link) => link.getAttribute("aria-label") ?? link.textContent?.trim() ?? ""),
+    );
+
+  expect(nomes).toHaveLength(2);
+  expect(new Set(nomes).size).toBe(2);
+  // Criterio 2.5.3: os dois nomes comecam pelo texto que se le na tela, para
+  // comando de voz continuar alcancando ambos.
+  for (const nome of nomes) expect(nome).toContain("Limpar filtros");
+});
 
 test("o Tab do topo passa por busca, filtro, primeiro card e o gatilho, nessa ordem", async ({
   page,
@@ -104,6 +126,10 @@ test("o novo total e anunciado numa regiao viva depois da busca", async ({ page 
   const live = page.locator("[aria-live='polite']");
   await expect(live).toHaveText("Mostrando 20 de 100 pokemons");
 
+  // Digitar antes de hidratar perde o evento: o React repoe o valor vazio no
+  // commit e a busca nunca sai. O campo existir no DOM nao significa que ele ja
+  // responde.
+  await waitForHydration(page);
   await searchInput(page).fill("pikachu");
 
   await expect(live).toHaveText("1 pokemon encontrado");

@@ -96,9 +96,21 @@ test("combinacao impossivel cai no estado vazio, e limpar restaura a lista", asy
   await expect(page.getByText("Nenhum pokemon encontrado")).toBeVisible();
   await expect(page.getByText('Nada combina com "pikachu" no tipo water.')).toBeVisible();
 
-  // Dois links com o mesmo nome levam a listagem limpa: o da barra de filtros e
-  // o do estado vazio. Qualquer um serve para provar que a lista volta inteira.
-  await page.getByRole("link", { name: "Limpar filtros" }).first().click();
+  // Os dois links que levam a listagem limpa tem nomes distintos, entao o teste
+  // volta a dizer *qual* deles foi exercitado: este e o do estado vazio.
+  await page.getByRole("link", { name: "Limpar filtros e ver a lista completa" }).click();
+
+  await expect(page).toHaveURL("/");
+  await expect.poll(() => listSize(page)).toBe(20);
+});
+
+test("o limpar da barra de filtros tambem restaura a lista", async ({ page }) => {
+  await page.goto("/?q=pikachu&type=water");
+  await expect(page.getByText("Nenhum pokemon encontrado")).toBeVisible();
+
+  // `exact` para nao casar com o nome estendido do estado vazio — os dois
+  // funcionam, e e o teste que passa a distinguir.
+  await page.getByRole("link", { name: "Limpar filtros", exact: true }).click();
 
   await expect(page).toHaveURL("/");
   await expect.poll(() => listSize(page)).toBe(20);
