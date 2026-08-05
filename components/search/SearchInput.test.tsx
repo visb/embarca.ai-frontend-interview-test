@@ -2,6 +2,7 @@ import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
+import { ClearFiltersAction } from "@/components/search/ClearFiltersAction";
 import { FilterTransitionProvider } from "@/components/search/FilterTransition";
 import { SearchInput } from "@/components/search/SearchInput";
 
@@ -31,8 +32,11 @@ function setup(initialUrl = "/") {
   const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
 
   render(
+    // O "Limpar filtros" entra junto porque o reset otimista do campo nasce
+    // dele: sem o par, nao da para exercitar a limpeza pelo caminho real.
     <FilterTransitionProvider>
       <SearchInput />
+      <ClearFiltersAction />
     </FilterTransitionProvider>,
   );
 
@@ -40,6 +44,7 @@ function setup(initialUrl = "/") {
 }
 
 const input = () => screen.getByLabelText("Buscar por nome");
+const clearFilters = () => screen.getByRole("link", { name: "Limpar filtros" });
 
 /** Deixa o debounce vencer e a navegacao commitar. */
 async function settleDebounce() {
@@ -163,5 +168,32 @@ describe("SearchInput", () => {
 
     expect(input()).toHaveValue("pik");
     expect(navigations).toEqual([]);
+  });
+
+  test("limpar filtros zera o campo antes de a URL mudar", async () => {
+    const user = setup("/?q=char");
+    expect(input()).toHaveValue("char");
+
+    await user.click(clearFilters());
+
+    // A assercao vale *antes* de o servidor responder: o `useTransition` segura
+    // a URL antiga, e esperar por ela deixaria o campo com o termo velho durante
+    // toda a espera — que era a queixa.
+    expect(input()).toHaveValue("");
+  });
+
+  test("limpar filtros durante o debounce nao deixa a busca voltar depois", async () => {
+    const user = setup();
+
+    await user.type(input(), "pika");
+    await user.click(clearFilters());
+
+    // Antes disso o timer em voo navegava para `/?q=pika` ~300ms depois do
+    // clique, desfazendo a limpeza sem o usuario ter feito nada.
+    await settleDebounce();
+
+    expect(input()).toHaveValue("");
+    expect(navigations).toEqual(["/"]);
+    expect(window.location.search).toBe("");
   });
 });

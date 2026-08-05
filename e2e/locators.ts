@@ -54,6 +54,15 @@ export function loadMoreButton(page: Page): Locator {
 }
 
 /**
+ * Container do resultado. Sem papel proprio — o que se observa nele e o
+ * `aria-busy`, que e como o leitor de tela fica sabendo que a lista na tela
+ * ainda e a anterior.
+ */
+export function resultsArea(page: Page): Locator {
+  return page.locator("[aria-busy]");
+}
+
+/**
  * Total anunciado quando a lista inteira ja esta na tela ("N pokemons
  * encontrados"). Enquanto o scroll nao acabou o contador diz "Mostrando X de
  * Y", entao esperar por esta forma tambem serve de sinal de que a filtragem

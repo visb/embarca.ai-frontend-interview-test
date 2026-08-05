@@ -12,7 +12,7 @@ const DEBOUNCE_MS = 300;
 export function SearchInput() {
   // Sem indicador proprio: o spinner do `TypeFilter` e unico para a barra
   // inteira, ja que busca e filtro compartilham o mesmo pending.
-  const { signalPending, navigate } = useFilterTransition();
+  const { signalPending, navigate, clearToken } = useFilterTransition();
   const searchParams = useSearchParams();
   const urlTerm = searchParams.get("q") ?? "";
 
@@ -21,6 +21,23 @@ export function SearchInput() {
   const [term, setTerm] = useState(urlTerm);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isTypingRef = useRef(false);
+
+  // "Limpar filtros" zera o campo na hora, sem esperar a URL. Ajuste durante o
+  // render, pela mesma razao do `TypeFilter`: em `useEffect` o usuario veria um
+  // frame com o termo antigo.
+  const [syncedClearToken, setSyncedClearToken] = useState(clearToken);
+  if (syncedClearToken !== clearToken) {
+    setSyncedClearToken(clearToken);
+    setTerm("");
+  }
+
+  // Debounce em voo desfaria a limpeza: ele navegaria de volta com o termo
+  // antigo ~300ms depois do clique. Cancelar no efeito basta — o timer so
+  // dispara muito depois de os efeitos deste render terem rodado.
+  useEffect(() => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    isTypingRef.current = false;
+  }, [clearToken]);
 
   // URL colada, voltar do navegador ou o shell prerenderizado resolvendo os
   // params: o input acompanha — mas nunca por cima de digitacao pendente.

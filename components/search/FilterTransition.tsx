@@ -33,6 +33,15 @@ interface FilterTransition {
   signalPending: () => void;
   /** Navega mantendo o pending ligado ate a nova arvore commitar. */
   navigate: (href: string) => void;
+  /**
+   * Contador que incrementa a cada limpeza. Nao e um valor de filtro: e o sinal
+   * de "descarte seu espelho local", e os controles reagem a *mudanca* dele.
+   * Sem isso o input e o `<select>` so zerariam quando a URL commitasse, o que
+   * so acontece no fim da transicao.
+   */
+  clearToken: number;
+  /** Zera busca e tipo de uma vez, pelo mesmo caminho dos outros controles. */
+  clearFilters: () => void;
 }
 
 const noop = () => {};
@@ -41,6 +50,8 @@ const FilterTransitionContext = createContext<FilterTransition>({
   pending: false,
   signalPending: noop,
   navigate: noop,
+  clearToken: 0,
+  clearFilters: noop,
 });
 
 export function useFilterTransition(): FilterTransition {
@@ -66,9 +77,24 @@ export function FilterTransitionProvider({ children }: { children: ReactNode }) 
     [router],
   );
 
+  const [clearToken, setClearToken] = useState(0);
+
+  // Reusa o `navigate`: a limpeza roda dentro da mesma transicao, entao o
+  // spinner e o esmaecimento da grade vem de graca, sem nada novo nos controles.
+  const clearFilters = useCallback(() => {
+    setClearToken((token) => token + 1);
+    navigate("/");
+  }, [navigate]);
+
   const value = useMemo<FilterTransition>(
-    () => ({ pending: isAwaitingDebounce || isNavigating, signalPending, navigate }),
-    [isAwaitingDebounce, isNavigating, signalPending, navigate],
+    () => ({
+      pending: isAwaitingDebounce || isNavigating,
+      signalPending,
+      navigate,
+      clearToken,
+      clearFilters,
+    }),
+    [isAwaitingDebounce, isNavigating, signalPending, navigate, clearToken, clearFilters],
   );
 
   return (

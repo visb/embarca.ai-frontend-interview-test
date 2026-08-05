@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
+import { ClearFiltersAction } from "@/components/search/ClearFiltersAction";
 import { FilterTransitionProvider } from "@/components/search/FilterTransition";
 import { TypeFilter } from "@/components/search/TypeFilter";
 import type { PokemonType } from "@/lib/api/types";
@@ -34,8 +35,11 @@ function setup(initialUrl = "/") {
   const user = userEvent.setup();
 
   render(
+    // O "Limpar filtros" entra junto: o reset otimista do `<select>` vem dele,
+    // e sem o par nao ha como exercitar a limpeza pelo caminho real.
     <FilterTransitionProvider>
       <TypeFilter types={TYPES} />
+      <ClearFiltersAction />
     </FilterTransitionProvider>,
   );
 
@@ -43,6 +47,7 @@ function setup(initialUrl = "/") {
 }
 
 const select = () => screen.getByLabelText("Filtrar por tipo");
+const clearFilters = () => screen.getByRole("link", { name: "Limpar filtros" });
 
 beforeEach(() => {
   navigations.length = 0;
@@ -133,5 +138,28 @@ describe("TypeFilter", () => {
     await user.selectOptions(select(), "fire");
 
     expect(select()).toBeEnabled();
+  });
+
+  test("limpar filtros volta para todos os tipos antes de a URL mudar", async () => {
+    const user = setup("/?type=fire");
+    expect(select()).toHaveValue("fire");
+
+    await user.click(clearFilters());
+
+    // Vale *antes* do commit da URL: enquanto a transicao segura a URL antiga, o
+    // `<select>` continuaria mostrando `fire` se dependesse so do searchParams.
+    expect(select()).toHaveValue("");
+    expect(navigations).toEqual(["/"]);
+  });
+
+  test("a limpeza sobrevive ao commit da URL, sem o tipo antigo voltar", async () => {
+    const user = setup("/?type=fire");
+
+    await user.click(clearFilters());
+
+    // O mock do router ja escreveu `/` na location; o ajuste de sincronia com a
+    // URL nao pode desfazer o reset otimista ao rodar de novo.
+    expect(window.location.search).toBe("");
+    expect(select()).toHaveValue("");
   });
 });

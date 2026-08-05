@@ -13,7 +13,7 @@ interface TypeFilterProps {
 }
 
 export function TypeFilter({ types }: TypeFilterProps) {
-  const { pending, navigate } = useFilterTransition();
+  const { pending, navigate, clearToken } = useFilterTransition();
   const searchParams = useSearchParams();
   const urlType = searchParams.get("type") ?? "";
 
@@ -30,6 +30,15 @@ export function TypeFilter({ types }: TypeFilterProps) {
   if (syncedType !== urlType) {
     setSyncedType(urlType);
     setSelected(urlType);
+  }
+
+  // "Limpar filtros" volta o controle para "Todos os tipos" na hora. Depois do
+  // clique a URL commita em `/`, entao `urlType` vira `""` — o mesmo valor, e o
+  // ajuste acima nao desfaz nada.
+  const [syncedClearToken, setSyncedClearToken] = useState(clearToken);
+  if (syncedClearToken !== clearToken) {
+    setSyncedClearToken(clearToken);
+    setSelected("");
   }
 
   return (

@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 
-import { announcedTotal, cards, listSize, searchInput, typeFilter } from "./locators";
+import { announcedTotal, cards, listSize, resultsArea, searchInput, typeFilter } from "./locators";
+import { holdRequests, isFilterNavigation } from "./network";
 
 /**
  * O que prova o filtro nao e a grade encolher — e *todo* card que sobrou
@@ -48,6 +49,31 @@ test("combinacao impossivel cai no estado vazio, e limpar restaura a lista", asy
   await page.getByRole("link", { name: "Limpar filtros" }).first().click();
 
   await expect(page).toHaveURL("/");
+  await expect.poll(() => listSize(page)).toBe(20);
+});
+
+test("limpar filtros zera os controles na hora e avisa que a lista recarrega", async ({ page }) => {
+  await page.goto("/?q=char&type=fire");
+  await expect(searchInput(page)).toHaveValue("char");
+  await expect(typeFilter(page)).toHaveValue("fire");
+
+  // Segura a navegacao para o intervalo "limpou, mas o servidor ainda nao
+  // respondeu" ficar parado enquanto as assercoes rodam. E justamente esse
+  // intervalo em que a tela parecia travada.
+  const release = await holdRequests(page, isFilterNavigation);
+
+  await page.getByRole("link", { name: "Limpar filtros" }).click();
+
+  // A URL ainda e a filtrada — a transicao a segura —, e mesmo assim os
+  // controles ja mostram o estado escolhido.
+  await expect(searchInput(page)).toHaveValue("");
+  await expect(typeFilter(page)).toHaveValue("");
+  await expect(resultsArea(page)).toHaveAttribute("aria-busy", "true");
+
+  release();
+
+  await expect(page).toHaveURL("/");
+  await expect(resultsArea(page)).toHaveAttribute("aria-busy", "false");
   await expect.poll(() => listSize(page)).toBe(20);
 });
 

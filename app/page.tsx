@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Suspense } from "react";
 
 import { InfiniteList } from "@/components/pokemon/InfiniteList";
 import { PokemonGridSkeleton } from "@/components/pokemon/PokemonGridSkeleton";
 import { ResultsArea } from "@/components/pokemon/ResultsArea";
+import { ClearFiltersAction } from "@/components/search/ClearFiltersAction";
 import { FilterBar } from "@/components/search/FilterBar";
 import { FilterTransitionProvider } from "@/components/search/FilterTransition";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -96,13 +96,10 @@ async function PokemonResults({ searchParams }: Pick<PageProps<"/">, "searchPara
       total={result.total}
       filters={{ q, type }}
       emptyDescription={buildEmptyDescription(q, type)}
+      // Mesmo componente da barra de filtros: limpar daqui tambem zera os
+      // controles na hora e liga o spinner, em vez de navegar em silencio.
       emptyAction={
-        <Link
-          href="/"
-          className="mt-2 rounded-full bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300 dark:focus-visible:outline-zinc-100"
-        >
-          Limpar filtros
-        </Link>
+        <ClearFiltersAction className="mt-2 rounded-full bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300 dark:focus-visible:outline-zinc-100" />
       }
     />
   );
