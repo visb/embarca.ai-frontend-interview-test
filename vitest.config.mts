@@ -21,7 +21,7 @@ export default defineConfig({
     exclude: ["node_modules/**", ".next/**", "e2e/**"],
     coverage: {
       provider: "v8",
-      include: ["app/**", "components/**", "lib/**"],
+      include: ["app/**", "components/**", "features/**", "lib/**"],
       // Sem threshold numerico: o gate segue qualitativo por story. O relatorio
       // serve para achar caminho nao exercitado, nao para bater porcentagem.
       // Fora da conta: o codigo dos proprios testes e o que so o Playwright

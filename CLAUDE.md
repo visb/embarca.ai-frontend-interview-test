@@ -29,9 +29,9 @@ Duas ideias, e só duas:
 > da decisão nº 1 do README (estado na URL). O que o MVVM comprava — **dados e lógica nunca dentro
 > do JSX** — continua obrigatório aqui, com nome honesto.
 
-> **Estado atual ≠ alvo.** Hoje a estrutura é flat: `app/`, `components/pokemon|search|ui`, `lib/`.
-> O alvo abaixo é **obrigatório para código novo**; o que existe **migra ao ser tocado**, um slice
-> por vez, dentro da story da feature — nunca como PR de mover pasta.
+> **A estrutura já está aplicada** (story 24): `features/catalog`, `features/search` e
+> `features/pokemon-detail`, com `components/shared` e `components/ui` para o que atravessa slice.
+> Não há mais isenção herdada — o que segue vale para todo arquivo, novo ou antigo.
 
 ### Vertical slice (fatia por domínio)
 
@@ -56,14 +56,18 @@ Regras do slice:
   Nunca estado cru nem helper interno.
 - **Domínio novo = pasta nova em `features/`**, não mais um arquivo solto em `components/`.
 
-Alvo da migração (referência ao mover cada arquivo):
+Onde cada domínio mora hoje (a árvore completa está no `README.md`):
 
-| Slice            | O que vai para lá                                                                                                                                                                                                    |
-| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `catalog`        | `InfiniteList`, `VirtualGrid`, `PokemonGrid`, `PokemonCard`, `ListStatus`, `LoadMoreSentinel`, `ResultCount`, `ResultsArea`, `PokemonGridSkeleton`, `useGridColumns`, `lib/grid`, `lib/pagination`, `app/actions.ts` |
-| `search`         | `SearchInput`, `TypeFilter`, `FilterBar`, `ClearFiltersAction`, `ClearFiltersLink`, `lib/filters`, `lib/search`                                                                                                      |
-| `pokemon-detail` | `PokemonDetail` e o conteúdo de `app/pokemon/[name]/`                                                                                                                                                                |
-| _compartilhado_  | `lib/api/*`, `lib/search-params`, `lib/url`, `lib/format`, `components/ui/*` e `FilterTransition` (estado partilhado entre `search` e `catalog` — não pode morar dentro de nenhum dos dois)                          |
+| Slice            | Cobre                                                                                                                                                                             |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `catalog`        | Listagem: pipeline de filtro/paginação, grade virtual, scroll infinito, card                                                                                                      |
+| `search`         | Controles: campo de busca, filtro de tipos, barra                                                                                                                                 |
+| `pokemon-detail` | Página de detalhe, metadata de SEO, link de volta                                                                                                                                 |
+| _compartilhado_  | `lib/api/*`, `lib/search-params`, `lib/url`, `lib/format`, `components/ui/*`, e `components/shared/*` para estado que dois slices usam (`FilterTransition`, `ClearFiltersAction`) |
+
+Regra prática do compartilhado: **dois slices usando a mesma coisa não é coincidência, é sinal de
+que ela não pertence a nenhum dos dois.** Subir é a correção; o gate do ESLint acusa quando não se
+faz isso.
 
 ### Camadas dentro do slice
 
@@ -98,8 +102,8 @@ dado nunca renderiza.
 
 - ❌ **Estado ou I/O dentro do JSX.** Scroll infinito, chamada de server action e sincronização de
   URL saem do componente e viram hook do slice (`features/catalog/hooks/useInfiniteList.ts`); o
-  componente só recebe `items`, `loading`, `onLoadMore`. Mesmo caso do `TypeFilter` →
-  `useTypeFilter`. (Hoje os dois estão misturados — é o que a migração desfaz ao tocar o arquivo.)
+  componente só recebe `items`, `loading`, `onLoadMore`. Mesmo corte no `TypeFilter` →
+  `useTypeSelection` e na grade virtual → `useVirtualRows`.
 - ❌ **Import cruzado entre slices.** Sobe para o compartilhado ou ganha nome próprio.
 - ❌ **`"use client"` acima da folha.** A diretiva contamina toda a subárvore importada: subir uma
   linha pode arrastar a grade inteira para o bundle. Se um componente client precisa de markup
@@ -133,25 +137,23 @@ discutir gosto, e cada um tem destino certo:
 | Doc comment no topo explicando dois assuntos            | dois arquivos                         |
 | Mais de ~150 linhas, ou ~80 de JSX                      | extrair o pedaço repetido do markup   |
 
-**Caso concreto — `components/search/TypeFilter.tsx` (188 linhas, 5 responsabilidades).** É o
-exemplo do que **não** repetir: rótulo do gatilho (`triggerLabel` + `MAX_LABEL_CHARS`), ordem
-canônica do toggle, espelho local sincronizado com a URL e com o `clearToken`, montagem da URL e
-navegação, e o markup do popover com as caixas. Cinco motivos para o arquivo mudar; um teste que
-quebra não diz qual dos cinco quebrou.
-
-Sob o alvo, vira:
+**Caso de referência — o `TypeFilter`.** Antes da story 24 ele era um arquivo de 188 linhas com
+cinco motivos para mudar: rótulo do gatilho (`triggerLabel` + `MAX_LABEL_CHARS`), ordem canônica do
+toggle, espelho local sincronizado com a URL e com o `clearToken`, montagem da URL e navegação, e o
+markup do popover. Um teste que quebrava não dizia qual dos cinco quebrou. Hoje:
 
 ```
 features/search/
+  constants.ts                 MAX_LABEL_CHARS
   lib/type-selection.ts        triggerLabel(selected), toggleType(known, selected, type, checked)
   hooks/useTypeSelection.ts    espelho local, sync com URL/clearToken, navigate
   components/TypeFilter.tsx    composição: campo + gatilho + <TypeOptions>
   components/TypeOptions.tsx   fieldset de checkboxes (dumb: recebe types/selected/onToggle)
 ```
 
-O ganho não é estética: `triggerLabel` e `toggleType` passam a ser testados sem render (inclusive
-com `fast-check`), `useTypeSelection` é testado sem popover, e `TypeOptions` é testado sem URL.
-Hoje qualquer um dos três exige montar o dropdown inteiro.
+O ganho não é estética, é testabilidade: `triggerLabel` e `toggleType` são exercitados sem render,
+e `TypeOptions` sem URL. Antes, qualquer um dos três exigia montar o dropdown inteiro. Use este
+corte como molde ao quebrar o próximo componente.
 
 **Antes de dar por pronto um componente:** dá para descrever o que ele faz em uma frase, sem "e"?
 Se não, o "e" é a linha de corte.
@@ -161,15 +163,13 @@ Se não, o "e" é a linha de corte.
 - `max-lines` 150 e `max-lines-per-function` 80 em `components/**`, `features/**` e `app/**`
   (`.tsx`), ignorando comentário e linha em branco — este projeto documenta decisão no arquivo, e
   cobrar isso empurraria na direção errada.
-- `no-restricted-imports` por slice: `features/<a>/` não importa o interior de `features/<b>/`.
-  **Slice novo só ganha fronteira depois de entrar no array `SLICES`** do config.
+- `no-restricted-imports` por slice: `features/<a>/` não importa `lib/`, `hooks/` nem `components/`
+  de `features/<b>/`. A raiz do slice (`data.ts`, `FilterBar.tsx`, `<Domínio>Page.tsx`) é a
+  superfície pública e continua importável. **Slice novo só ganha fronteira depois de entrar no
+  array `SLICES`** do config.
 - `app/**` não importa `features/*/lib/**` nem `features/*/hooks/**` — a rota compõe.
-- `OVERSIZED_LEGACY` é a lista de dívida herdada (`TypeFilter`, `VirtualGrid`, `PokemonDetail`,
-  `SearchInput`). **Só encolhe:** cada arquivo sai dela na story que migra o slice dele, e código
-  novo nunca entra — se precisa da exceção, precisa é ser quebrado.
-
-Mesmo diagnóstico vale para `InfiniteList` (estado + server action + URL + render) — ver a proibição
-acima.
+- `OVERSIZED_LEGACY` **está vazio** e é para continuar assim: era a lista de dívida herdada, zerada
+  pela story 24. Arquivo novo não entra — se precisa da exceção, precisa é ser quebrado.
 
 ### Regras de fronteira deste projeto
 

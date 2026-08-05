@@ -108,24 +108,44 @@ rotas mais acessadas e deixar o resto sob demanda — **não** desligar o preren
 
 ## Arquitetura
 
+O código é organizado em **vertical slices**: uma pasta por domínio em `features/`, e dentro dela as
+camadas recortadas pela fronteira servidor/cliente. As convenções completas (e o que elas proíbem)
+estão no [`CLAUDE.md`](./CLAUDE.md).
+
 ```
-app/                      Rotas do App Router
-  page.tsx                Listagem: busca + filtro + paginação
+app/                      Só roteamento: metadata, Suspense e a page do slice
+  page.tsx                Metadata da listagem + <CatalogPage>
   loading.tsx             Skeleton da listagem
   error.tsx               Error boundary com retry
   robots.ts, sitemap.ts   Metadata gerada
   pokemon/[name]/         Detalhe, com loading, error e not-found próprios
+features/
+  catalog/                Listagem: grade virtual, scroll infinito, paginação
+    CatalogPage.tsx       Composição da tela
+    data.ts               parse → filtrar → paginar (servidor)
+    actions.ts            Server action da próxima fatia
+    lib/                  filters, search, grid, pagination, empty-description (puros)
+    hooks/                useInfiniteList, useVirtualRows, useGridColumns
+    components/           Card, grade, linha virtual, contador, sentinel, status
+  search/                 Controles: busca, filtro de tipos, barra
+    FilterBar.tsx         Composição dos controles
+    data.ts               Tipos oferecidos pelo filtro
+    lib/type-selection.ts Rótulo do gatilho e ordem canônica (puros)
+    hooks/                useSearchField, useTypeSelection
+    components/           SearchInput, TypeFilter, TypeOptions, ClearFiltersLink
+  pokemon-detail/         Página de detalhe
+    data.ts               Detalhe por nome + params das rotas prerenderizadas
+    metadata.ts           Metadata de SEO a partir do modelo de domínio
+    lib/back-query.ts     Query do link de volta (pura)
+    components/           Header, sprite, habilidades, movimentos, link de volta
 components/
-  pokemon/                Card, grid, detalhe, badge de tipo, contador
-  search/                 Input de busca, filtro de tipo, barra de filtros
-  ui/                     Estado vazio, skeleton, link de volta, popover e checkbox (shadcn)
+  shared/                 Estado partilhado entre slices: FilterTransition, ClearFiltersAction
+  ui/                     Estado vazio, skeleton, badge de tipo, link de volta, popover e checkbox
 lib/
   api/                    Única camada com I/O: http, tipos, mappers, serviços
-  filters.ts, search.ts   Filtro por tipos e busca por nome (puros)
-  grid.ts                 Colunas da grade por largura de viewport (pura)
-  pagination.ts           Paginação em memória (pura)
   search-params.ts        Normalização dos parâmetros de URL (pura)
   url.ts                  Montagem das query strings da listagem (pura)
+  format.ts, site.ts      Formatação de nome/número e constantes do site
   utils.ts                `cn` do shadcn (clsx + tailwind-merge)
 e2e/                      Specs do Playwright
   erros/                  Caminho de erro (projeto `chromium-erros`)
@@ -135,8 +155,11 @@ docs/desafio.md           Enunciado original
 stories/                  Uma story por entrega, com as decisões
 ```
 
-A regra de separação é simples: **`lib/api/` é o único lugar que faz I/O**, o resto de `lib/` são
-funções puras, e os componentes não têm regra de negócio — recebem dados prontos e renderizam.
+As regras de separação: **`lib/api/` é o único lugar que faz I/O**, regra de negócio é função pura
+em `lib/` (do slice ou compartilhada), estado de cliente vive em `hooks/`, e componente não busca
+nem decide — recebe dados prontos e renderiza. Um slice não importa o interior de outro; o que dois
+usam sobe para o compartilhado. O ESLint trava as três coisas (`max-lines`,
+`max-lines-per-function`, `no-restricted-imports` por slice).
 
 ## Decisões técnicas
 
@@ -212,7 +235,7 @@ de performance; o que se garante é comportamento: **o DOM para de crescer junto
 O desenho que sustenta isso:
 
 - **Virtualiza por linha, não por card**, e as colunas passam a ser calculadas em JS
-  (`lib/grid.ts`), que vira a fonte da verdade — o virtualizer precisa saber quantos itens cabem
+  (`features/catalog/lib/grid.ts`), que vira a fonte da verdade — o virtualizer precisa saber quantos itens cabem
   numa linha, e `sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4` é invisível para ele. Os
   breakpoints ficam num lugar só, medidos contra a largura da viewport (a mesma das media
   queries), para o JS e o CSS não divergirem.
