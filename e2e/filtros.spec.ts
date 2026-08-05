@@ -66,23 +66,37 @@ test("dois tipos marcados sao uniao: todo card tem um badge ou o outro", async (
   expect(vazados).toBe(0);
 });
 
-test("marcar caixas so navega quando o dropdown fecha", async ({ page }) => {
+test("cada caixa marcada recarrega a lista com o dropdown ainda aberto", async ({ page }) => {
   await page.goto("/");
   await expect.poll(() => listSize(page)).toBe(20);
 
   await typeFilter(page).click();
-  await typeOption(page, "fire").click();
-  await typeOption(page, "water").click();
 
-  // Navegar por caixa seriam quatro round-trips e quatro remounts da lista para
-  // quem marca quatro tipos. A lista atras do dropdown continua a completa.
-  await expect(page).toHaveURL("/");
-  expect(await listSize(page)).toBe(20);
+  await typeOption(page, "fire").click();
+  await expect(page).toHaveURL("/?type=fire");
+  // O dropdown nao fecha ao navegar: quem esta marcando continua marcando, e ve
+  // o efeito de cada escolha em vez de descobrir tudo no fim.
+  await expect(typeOption(page, "water")).toBeVisible();
+
+  await typeOption(page, "water").click();
+  await expect(page).toHaveURL("/?type=fire,water");
+  await expect(typeOption(page, "fire")).toBeChecked();
+  await expect(typeOption(page, "water")).toBeChecked();
 
   await page.keyboard.press("Escape");
+  await expect(typeFilter(page)).toHaveText(/fire, water/);
+});
 
-  await expect(page).toHaveURL("/?type=fire,water");
-  await expect(typeFilter(page)).toHaveText(/2 tipos/);
+test("limpar tipos dentro do dropdown restaura a lista completa na hora", async ({ page }) => {
+  await page.goto("/?type=fire,water");
+  await expect(cards(page).first()).toBeVisible();
+
+  await typeFilter(page).click();
+  await page.getByRole("button", { name: "Limpar tipos" }).click();
+
+  await expect(page).toHaveURL("/");
+  await expect(typeOption(page, "fire")).not.toBeChecked();
+  await expect.poll(() => listSize(page)).toBe(20);
 });
 
 /**
@@ -164,7 +178,7 @@ test("busca cruza com varios tipos: nome E (tipo OU tipo)", async ({ page }) => 
 test("URL colada fora da ordem canonica renderiza o mesmo estado", async ({ page }) => {
   await page.goto("/?type=water,fire");
 
-  await expect(typeFilter(page)).toHaveText(/2 tipos/);
+  await expect(typeFilter(page)).toHaveText(/fire, water/);
 
   await typeFilter(page).click();
   await expect(typeOption(page, "fire")).toBeChecked();

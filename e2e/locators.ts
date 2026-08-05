@@ -71,8 +71,10 @@ export function typeOption(page: Page, name: string): Locator {
 }
 
 /**
- * Marca exatamente os tipos pedidos e fecha o dropdown — que e o que dispara a
- * navegacao. Espera a URL para o passo seguinte nao correr com a transicao.
+ * Marca os tipos pedidos e fecha o dropdown.
+ *
+ * Cada caixa navega por conta propria; o `Escape` do fim so tira o dropdown da
+ * frente para o passo seguinte do teste enxergar a lista.
  */
 export async function selectTypes(page: Page, names: string[]): Promise<void> {
   await typeFilter(page).click();

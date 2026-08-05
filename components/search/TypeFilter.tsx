@@ -15,11 +15,32 @@ interface TypeFilterProps {
   types: PokemonType[];
 }
 
-/** Rotulo do gatilho: o que esta filtrado, sem obrigar a abrir o dropdown. */
+/**
+ * Orcamento de caracteres do rotulo do gatilho.
+ *
+ * Contagem de caracteres, e nao medicao de largura: medir exigiria ler layout
+ * no cliente e faria o rotulo mudar entre servidor e hidratacao. O numero e
+ * calibrado para a largura do controle (`sm:max-w-3xs`) menos o chevron; o
+ * `truncate` do span cobre o caso de nome excepcionalmente longo.
+ */
+const MAX_LABEL_CHARS = 24;
+
+/**
+ * Rotulo do gatilho: o que esta filtrado, sem obrigar a abrir o dropdown.
+ *
+ * Mostra os nomes enquanto couberem. Quando nao cabem, os dois primeiros mais
+ * a contagem do resto — "fire, water +2 tipos" diz mais que "4 tipos" e nao
+ * estoura o controle. Ate dois tipos o nome sempre aparece: cortar ali daria
+ * "+0 tipos".
+ */
 function triggerLabel(selected: string[]): string {
   if (selected.length === 0) return "Todos os tipos";
-  if (selected.length === 1) return selected[0];
-  return `${selected.length} tipos`;
+
+  const full = selected.join(", ");
+  if (selected.length <= 2 || full.length <= MAX_LABEL_CHARS) return full;
+
+  const restantes = selected.length - 2;
+  return `${selected.slice(0, 2).join(", ")} +${restantes} ${restantes === 1 ? "tipo" : "tipos"}`;
 }
 
 /**
@@ -29,10 +50,11 @@ function triggerLabel(selected: string[]): string {
  * `?type=fire,water`, sempre na ordem do catalogo de tipos — a ordem de clique
  * geraria URLs diferentes para o mesmo resultado.
  *
- * **A navegacao acontece ao fechar, nao a cada caixa.** Marcar quatro tipos
- * dispararia quatro round-trips ao servidor e quatro remounts da lista. O
- * estado das caixas e local; ao fechar, se o conjunto mudou em relacao a URL,
- * navega uma vez so.
+ * **Cada caixa navega na hora**, sem esperar o dropdown fechar: a lista atras
+ * dele recarrega junto, e quem esta marcando ve o efeito de cada escolha em vez
+ * de descobrir tudo no fim. O custo aceito e um round-trip por caixa; o mesmo
+ * `useTransition` dos outros controles cobre a espera, entao o spinner e o
+ * `aria-busy` da grade ja vem de graca.
  */
 export function TypeFilter({ types }: TypeFilterProps) {
   const { pending, navigate, clearToken } = useFilterTransition();
@@ -67,25 +89,19 @@ export function TypeFilter({ types }: TypeFilterProps) {
     setSelected([]);
   }
 
-  function toggle(type: string, checked: boolean) {
-    setSelected((current) => {
-      const next = checked ? [...current, type] : current.filter((entry) => entry !== type);
-      // Reordena pela lista canonica a cada mexida: o estado local nunca guarda
-      // ordem de clique, entao a URL montada no fechamento ja sai canonica.
-      return knownTypes.filter((known) => next.includes(known));
-    });
+  /** Aplica o conjunto novo: espelho local primeiro, URL em seguida. */
+  function apply(next: string[]) {
+    setSelected(next);
+    // Mesma razao do SearchInput: dentro do handler a location e a fonte
+    // confiavel da query atual. O `type` e sobrescrito inteiro a partir do
+    // estado local, entao nao depende de a URL ja ter commitado.
+    navigate(listingHref(buildQuery(window.location.search, { type: next })));
   }
 
-  function commit(nextOpen: boolean) {
-    setOpen(nextOpen);
-    if (nextOpen) return;
-
-    // Fechar sem mexer em nada nao navega — nada mudou para o servidor dizer.
-    if (selected.join(",") === urlKey) return;
-
-    // Mesma razao do SearchInput: dentro do handler a location e a fonte
-    // confiavel da query atual.
-    navigate(listingHref(buildQuery(window.location.search, { type: selected })));
+  function toggle(type: string, checked: boolean) {
+    // Reconstroi na ordem canonica em vez de anexar: o estado local nunca guarda
+    // ordem de clique, entao a URL ja sai na ordem do catalogo.
+    apply(knownTypes.filter((known) => (known === type ? checked : selected.includes(known))));
   }
 
   return (
@@ -96,17 +112,19 @@ export function TypeFilter({ types }: TypeFilterProps) {
         pending, entao dois spinners piscando juntos so somariam ruido.
       */}
       <div className="flex items-center gap-2">
-        <Popover open={open} onOpenChange={commit}>
+        <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger
             // Nome acessivel fixo: o rotulo visivel muda com a selecao, e um
             // nome que muda de valor faz o leitor de tela anunciar um controle
             // diferente a cada mexida.
             aria-label="Filtrar por tipo"
-            // Sem `capitalize`: o rotulo tanto e um nome de tipo quanto
-            // "2 tipos" ou "Todos os tipos", que viraria "2 Tipos".
+            // Sem `capitalize`: o rotulo tanto e nome de tipo quanto
+            // "fire, water +2 tipos" ou "Todos os tipos", que viraria
+            // "Todos Os Tipos".
             className="flex h-10 w-full items-center justify-between gap-2 rounded-md border border-zinc-300 bg-white px-3 text-sm text-zinc-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:focus-visible:outline-zinc-100"
           >
-            {triggerLabel(selected)}
+            {/* `truncate`: rede de seguranca do orcamento de caracteres. */}
+            <span className="truncate">{triggerLabel(selected)}</span>
             <svg
               viewBox="0 0 24 24"
               fill="none"
@@ -155,7 +173,7 @@ export function TypeFilter({ types }: TypeFilterProps) {
             {selected.length > 0 ? (
               <button
                 type="button"
-                onClick={() => setSelected([])}
+                onClick={() => apply([])}
                 className="self-start rounded text-sm font-medium text-zinc-700 underline underline-offset-4 hover:text-zinc-950 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 dark:text-zinc-300 dark:hover:text-zinc-50 dark:focus-visible:outline-zinc-100"
               >
                 Limpar tipos

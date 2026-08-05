@@ -61,15 +61,20 @@ Decisões travadas nesta story:
   `lib/utils.ts` com `cn`. Conviver com os componentes hand-rolled existentes (`Skeleton`,
   `EmptyState`, `PendingIndicator`) — não migrar nada.
 - `components/search/TypeFilter.tsx` — reescrito:
-  - trigger é um `<button>` com rótulo dinâmico: "Todos os tipos" quando vazio, o nome do tipo
-    quando um só, "N tipos" quando vários. `aria-label` fixo "Filtrar por tipo" para o locator do
-    e2e e o leitor de tela continuarem tendo um nome estável;
+  - trigger é um `<button>` com rótulo dinâmico: "Todos os tipos" quando vazio, os nomes
+    separados por vírgula enquanto couberem e, quando não cabem, os dois primeiros mais
+    "+N tipos" ("fire, water +2 tipos"). O plano dizia "N tipos" para qualquer seleção múltipla;
+    o usuário pediu os nomes na revisão da entrega, porque a contagem obriga a abrir o dropdown
+    para saber o que está filtrado. O corte é por orçamento de caracteres, e não por medição de
+    largura — medir exigiria ler layout no cliente e faria o rótulo mudar entre servidor e
+    hidratação. `aria-label` fixo "Filtrar por tipo" para o locator do e2e e o leitor de tela
+    continuarem tendo um nome estável;
   - conteúdo: `<fieldset>` com `<legend class="sr-only">Tipos</legend>` e
     `grid grid-cols-2 gap-x-4 gap-y-2` de `Checkbox` + `<label>`, um por tipo do catálogo;
-  - **navegação só ao fechar o popover**, não a cada checkbox. Marcar quatro tipos dispararia
-    quatro round-trips ao servidor e quatro remounts da lista. O estado das caixas é local; ao
-    fechar (Esc, clique fora, ou botão "Aplicar"), se o conjunto mudou em relação à URL, chama
-    `buildQuery` + `navigate`. Se não mudou, não navega;
+  - **navegação a cada checkbox**, com o popover aberto. O plano original navegava só ao fechar,
+    para poupar round-trips; o usuário pediu o contrário na revisão da entrega e a decisão foi
+    revertida: ver o efeito de cada escolha vale mais que economizar requisição num catálogo que
+    já está em cache. Fechar o popover não navega — quem navega é a caixa;
   - botão "Limpar tipos" dentro do popover quando há algo marcado;
   - o espelho local/`syncedType` de hoje (URL colada, botão voltar, shell prerenderizado) é
     mantido, agora comparando arrays por string canônica;
@@ -136,15 +141,13 @@ Decisões travadas nesta story:
 `components/search/TypeFilter.test.tsx` (reescrito):
 
 - trigger fechado mostra "Todos os tipos"; com `?type=fire` mostra "fire"; com `?type=fire,water`
-  mostra "2 tipos";
+  mostra "fire, water"; com nomes que nao cabem, os dois primeiros mais "+N tipos";
 - abrir o popover renderiza uma checkbox por tipo, com as da URL já marcadas;
-- marcar duas caixas **não** navega enquanto o popover está aberto (asserção explícita de que
-  `navigate` não foi chamado) — é a decisão de design que evita o round-trip por clique;
-- fechar com o conjunto alterado navega uma única vez, com `type=fire,water`, preservando `q` e
-  removendo `page`;
-- fechar sem alterar nada não navega;
-- desmarcar tudo e fechar navega para a URL sem `type`;
-- "Limpar tipos" desmarca todas as caixas;
+- marcar uma caixa navega na hora e o popover continua aberto;
+- marcar a segunda acumula: `type=fire` e depois `type=fire,water`, preservando `q` e removendo `page`;
+- abrir e fechar sem mexer nas caixas nao navega;
+- desmarcar o ultimo tipo tira `type` da URL na hora;
+- "Limpar tipos" desmarca todas as caixas e navega para a lista completa;
 - URL mudando por fora (voltar do navegador) re-sincroniza as caixas;
 - teclado: Esc fecha e devolve o foco ao trigger; Tab percorre as checkboxes na ordem do DOM.
 
@@ -182,14 +185,15 @@ ou `data-testid`.
 - trigger alcançável por Tab e com contorno de foco visível (`focusRingWidth` ≠ `0px`);
 - Esc fecha o popover e o foco volta ao trigger.
 
-`e2e/loading-filtros.spec.ts`: o `PendingIndicator` aparece ao fechar o popover com mudança, e não
-aparece ao fechar sem mudança.
+`e2e/loading-filtros.spec.ts`: o `PendingIndicator` aparece ao marcar uma caixa, com o popover
+ainda aberto, e não aparece ao abrir e fechar sem mexer em nada.
 
 ### Verificação manual (`pnpm dev`)
 
 - Abrir `/`, abrir o dropdown: duas colunas de checkboxes, todos os tipos visíveis sem scroll
   interno em altura de laptop.
-- Marcar 3 tipos, fechar: uma navegação só, trigger diz "3 tipos", lista amplia.
+- Marcar 3 tipos: a lista amplia a cada caixa, com o dropdown aberto o tempo todo; o trigger lista
+  os nomes e cai para "nome, nome +N tipos" quando eles não cabem.
 - Em 375px: popover não estoura a viewport, cai para uma coluna, trigger ocupa a largura toda.
 - Dark mode: popover, checkboxes e o estado marcado legíveis nos dois temas (os tokens do shadcn
   precisam bater com o zinc atual).

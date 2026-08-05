@@ -28,7 +28,7 @@ const TYPES: PokemonType[] = [
   { name: "electric" },
 ];
 
-function setup(initialUrl = "/") {
+function setup(initialUrl = "/", types: PokemonType[] = TYPES) {
   navigations.length = 0;
   window.history.replaceState(null, "", initialUrl);
 
@@ -37,7 +37,7 @@ function setup(initialUrl = "/") {
   render(
     // O "Limpar filtros" entra junto: o reset otimista do controle vem dele.
     <FilterTransitionProvider>
-      <TypeFilter types={TYPES} />
+      <TypeFilter types={types} />
       <ClearFiltersAction />
     </FilterTransitionProvider>,
   );
@@ -80,10 +80,42 @@ describe("TypeFilter", () => {
     expect(trigger()).toHaveTextContent("fire");
   });
 
-  test("com varios tipos na URL o gatilho conta em vez de listar", () => {
+  test("com varios tipos na URL o gatilho lista os nomes", () => {
     setup("/?type=fire,water");
 
-    expect(trigger()).toHaveTextContent("2 tipos");
+    // Nome do tipo diz mais que a contagem: "2 tipos" obriga a abrir o dropdown
+    // para saber quais.
+    expect(trigger()).toHaveTextContent("fire, water");
+  });
+
+  test("quando os nomes nao cabem, o gatilho mostra os dois primeiros e conta o resto", () => {
+    setup("/?type=grass,fire,water,electric");
+
+    // Ordem canonica: grass, fire, water, electric.
+    expect(trigger()).toHaveTextContent("grass, fire +2 tipos");
+  });
+
+  test("tres nomes curtos ainda cabem: o corte so entra quando estoura", () => {
+    setup("/?type=grass,fire,water");
+
+    expect(trigger()).toHaveTextContent("grass, fire, water");
+  });
+
+  test("um unico tipo restante e contado no singular", () => {
+    const longos: PokemonType[] = [{ name: "fighting" }, { name: "electric" }, { name: "psychic" }];
+
+    setup("/?type=fighting,electric,psychic", longos);
+
+    expect(trigger()).toHaveTextContent("fighting, electric +1 tipo");
+  });
+
+  test("dois nomes longos aparecem inteiros, sem virar contagem", () => {
+    const longos: PokemonType[] = [{ name: "fighting" }, { name: "electric" }];
+
+    setup("/?type=fighting,electric", longos);
+
+    // Cortar com dois selecionados daria "+0 tipos".
+    expect(trigger()).toHaveTextContent("fighting, electric");
   });
 
   test("abrir oferece uma caixa por tipo, com as da URL ja marcadas", async () => {
@@ -96,29 +128,28 @@ describe("TypeFilter", () => {
     expect(option("water")).not.toBeChecked();
   });
 
-  test("marcar caixas nao navega enquanto o dropdown esta aberto", async () => {
+  test("marcar uma caixa recarrega a lista na hora, sem fechar o dropdown", async () => {
     const user = setup();
 
     await user.click(trigger());
     await user.click(option("fire"));
-    await user.click(option("water"));
 
-    // Navegar por caixa seriam quatro round-trips e quatro remounts da lista
-    // para quem marca quatro tipos.
-    expect(navigations).toEqual([]);
+    // O dropdown continua aberto: quem esta marcando ve o efeito de cada
+    // escolha em vez de descobrir tudo no fim.
+    expect(navigations).toEqual(["/?type=fire"]);
     expect(option("fire")).toBeChecked();
-    expect(option("water")).toBeChecked();
   });
 
-  test("fechar com o conjunto alterado navega uma vez so", async () => {
+  test("cada caixa marcada acumula no conjunto ja filtrado", async () => {
     const user = setup();
 
     await user.click(trigger());
     await user.click(option("fire"));
     await user.click(option("water"));
-    await close(user);
 
-    expect(navigations).toEqual(["/?type=fire,water"]);
+    expect(navigations).toEqual(["/?type=fire", "/?type=fire,water"]);
+    expect(option("fire")).toBeChecked();
+    expect(option("water")).toBeChecked();
   });
 
   test("a ordem na URL e a do catalogo, nao a de clique", async () => {
@@ -127,28 +158,28 @@ describe("TypeFilter", () => {
     await user.click(trigger());
     await user.click(option("water"));
     await user.click(option("fire"));
-    await close(user);
 
     // `fire` vem antes de `water` em `TYPES`. Sem a ordem canonica, clicar na
     // ordem inversa geraria outra URL para o mesmo resultado.
     expect(new URLSearchParams(window.location.search).get("type")).toBe("fire,water");
   });
 
-  test("fechar sem mexer em nada nao navega", async () => {
+  test("abrir e fechar sem mexer em nada nao navega", async () => {
     const user = setup("/?type=fire");
 
     await user.click(trigger());
     await close(user);
 
+    // Quem navega e a caixa, nao o fechamento: sem mexer em nada, nada muda
+    // para o servidor dizer.
     expect(navigations).toEqual([]);
   });
 
-  test("desmarcar tudo e fechar tira o filtro da URL", async () => {
+  test("desmarcar tira o filtro da URL na hora", async () => {
     const user = setup("/?type=fire");
 
     await user.click(trigger());
     await user.click(option("fire"));
-    await close(user);
 
     expect(window.location.search).toBe("");
     expect(navigations).toEqual(["/"]);
@@ -159,7 +190,6 @@ describe("TypeFilter", () => {
 
     await user.click(trigger());
     await user.click(option("electric"));
-    await close(user);
 
     const params = new URLSearchParams(window.location.search);
 
@@ -169,7 +199,7 @@ describe("TypeFilter", () => {
     expect(params.get("page")).toBeNull();
   });
 
-  test("limpar tipos desmarca tudo sem fechar o dropdown", async () => {
+  test("limpar tipos desmarca tudo e recarrega, sem fechar o dropdown", async () => {
     const user = setup("/?type=fire,water");
 
     await user.click(trigger());
@@ -177,7 +207,7 @@ describe("TypeFilter", () => {
 
     expect(option("fire")).not.toBeChecked();
     expect(option("water")).not.toBeChecked();
-    expect(navigations).toEqual([]);
+    expect(navigations).toEqual(["/"]);
   });
 
   test("sem nada marcado nao ha o que limpar", async () => {
@@ -215,7 +245,7 @@ describe("TypeFilter", () => {
 
   test("limpar filtros zera o controle antes de a URL mudar", async () => {
     const user = setup("/?type=fire,water");
-    expect(trigger()).toHaveTextContent("2 tipos");
+    expect(trigger()).toHaveTextContent("fire, water");
 
     await user.click(clearFilters());
 

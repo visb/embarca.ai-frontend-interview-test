@@ -53,34 +53,34 @@ test("enquanto a navegacao nao volta, o campo continua editavel e com foco", asy
   await expect(cards(page).first().getByRole("heading", { name: "Pikachu" })).toBeVisible();
 });
 
-test("fechar o dropdown de tipos com mudanca acende o indicador", async ({ page }) => {
+test("marcar um tipo acende o indicador sem fechar o dropdown", async ({ page }) => {
   await page.goto("/");
   await expect.poll(() => listSize(page)).toBe(20);
 
   const release = await holdRequests(page, isFilterNavigation);
 
-  await selectTypes(page, ["fire", "water"]);
+  await typeFilter(page).click();
+  await typeOption(page, "fire").click();
 
-  // A navegacao sai no fechamento, entao e la que o feedback precisa aparecer —
-  // marcar caixas sozinho nao pede nada ao servidor.
+  // O feedback tem que aparecer na propria caixa: e ela que pede a lista nova.
   await expect(pendingIndicator(page)).toBeVisible();
   await expect(resultsArea(page)).toHaveAttribute("aria-busy", "true");
+  // E a caixa marcada ja mostra a escolha, mesmo com a URL ainda presa.
+  await expect(typeOption(page, "fire")).toBeChecked();
 
   release();
 
-  await expect(page).toHaveURL("/?type=fire,water");
+  await expect(page).toHaveURL("/?type=fire");
   await expect(pendingIndicator(page)).toHaveCount(0);
 });
 
-test("fechar o dropdown sem mudar nada nao acende o indicador", async ({ page }) => {
+test("abrir e fechar o dropdown sem mexer nas caixas nao acende o indicador", async ({ page }) => {
   await page.goto("/?type=fire");
   await expect(cards(page).first()).toBeVisible();
 
+  // Quem navega e a caixa, nao o fechamento: abrir para olhar nao pode custar
+  // um round-trip nem piscar spinner.
   await typeFilter(page).click();
-  // Marcar e desmarcar volta ao conjunto da URL: nada mudou para o servidor
-  // dizer, entao nao ha por que navegar nem piscar spinner.
-  await typeOption(page, "water").click();
-  await typeOption(page, "water").click();
   await page.keyboard.press("Escape");
 
   await expect(page).toHaveURL("/?type=fire");

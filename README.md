@@ -177,9 +177,10 @@ ordem **nome → tipo**, e a paginação roda depois — um pipeline só.
 
 O filtro aceita vários tipos, que viajam na URL como `?type=fire,water` — lista num param único,
 sempre na ordem do catálogo de tipos, para a mesma seleção nunca gerar duas URLs. Os tipos
-combinam por **OU** entre si e por **E** com a busca: nome E (tipo OU tipo). A navegação sai ao
-fechar o dropdown, e não a cada checkbox — marcar quatro tipos seriam quatro round-trips e quatro
-remounts da lista.
+combinam por **OU** entre si e por **E** com a busca: nome E (tipo OU tipo). Cada checkbox navega
+na hora, com o dropdown aberto: o custo é um round-trip por caixa, e o ganho é ver o efeito de
+cada escolha em vez de descobrir tudo no fim. A espera reusa o mesmo `useTransition` da busca,
+então o spinner e o `aria-busy` da grade vêm de graça.
 
 ### 6. Paginação em memória, não `offset` na API
 
