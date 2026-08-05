@@ -26,6 +26,11 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Artefatos gerados: o relatorio HTML do `test:coverage` traz JS de
+    // terceiros que nao e codigo deste projeto.
+    "coverage/**",
+    "playwright-report/**",
+    "test-results/**",
   ]),
 ]);
 

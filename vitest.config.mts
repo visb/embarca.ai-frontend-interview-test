@@ -22,6 +22,11 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       include: ["app/**", "components/**", "lib/**"],
+      // Sem threshold numerico: o gate segue qualitativo por story. O relatorio
+      // serve para achar caminho nao exercitado, nao para bater porcentagem.
+      // Fora da conta: o codigo dos proprios testes e o que so o Playwright
+      // alcanca (`e2e/`), que inflaria o denominador sem dizer nada.
+      exclude: ["test/**", "e2e/**", "**/*.test.{ts,tsx}"],
     },
   },
 });
