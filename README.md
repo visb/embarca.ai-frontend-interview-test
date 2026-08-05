@@ -42,6 +42,22 @@ fallback para `http://localhost:3000`.
 > No Windows, use `pnpm run lint` — `pnpm lint` pode colidir com o `lint.bat` do Android SDK
 > caso ele esteja no `PATH`.
 
+## Deploy
+
+Publicado pela integração Git da Vercel (import do repositório), não por `vercel --prod` na mão:
+assim cada PR ganha preview e o build é o mesmo que o CI roda.
+
+1. Importar o repositório na Vercel — o framework é detectado como Next.js e o package manager
+   sai do `packageManager` do `package.json`.
+2. Definir `NEXT_PUBLIC_SITE_URL` nos ambientes **Production** e **Preview**, com a URL de cada
+   um. Ela é inlined no build, então mudá-la exige novo deploy.
+3. Conferir que a versão de Node do projeto na Vercel bate com a do CI (22) — divergência de
+   major é a causa clássica de "passa no CI, quebra no deploy".
+
+O build da Vercel executa `getPokemonCatalog()` para prerenderizar as 100 rotas de detalhe. Se
+estourar tempo ou tomar rate limit da PokeAPI, a saída é reduzir o `generateStaticParams` às
+rotas mais acessadas e deixar o resto sob demanda — **não** desligar o prerender inteiro.
+
 ## Arquitetura
 
 ```
