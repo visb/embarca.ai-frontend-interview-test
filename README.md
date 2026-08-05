@@ -1,36 +1,92 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Teste Técnico – Desenvolvedor Front-end
 
-## Getting Started
+**Next.js + React + Arquitetura Front-end**
 
-First, run the development server:
+## 🎯 Objetivo
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+Criar uma aplicação Next.js que consuma a PokeAPI e exiba uma experiência completa de listagem, busca, filtros e detalhes de Pokémons, com foco em arquitetura, performance, qualidade de código, experiência do usuário e tomada de decisão técnica.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+O objetivo não é apenas entregar uma tela funcional, mas demonstrar maturidade na construção de uma aplicação front-end escalável, bem organizada e preparada para manutenção.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🔗 API a ser utilizada
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **Listagem de Pokémons:**
+  `GET https://pokeapi.co/api/v2/pokemon?limit=100&offset=0`
+- **Detalhes de um Pokémon:**
+  `GET https://pokeapi.co/api/v2/pokemon/{name}`
+- **Tipos de Pokémon:**
+  `GET https://pokeapi.co/api/v2/type`
 
-## Learn More
+## ✅ Requisitos obrigatórios
 
-To learn more about Next.js, take a look at the following resources:
+### 1. Listagem de Pokémons
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- Exibir os 100 primeiros Pokémons
+- Paginar a listagem de 20 em 20
+- Exibir cards contendo: Nome, Imagem, Tipos, Número/ID do Pokémon
+- Implementar estados de Loading, Erro e Lista vazia
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 2. Busca e filtros
 
-## Deploy on Vercel
+- Permitir busca por nome
+- Permitir filtro por tipo de Pokémon
+- Busca deve funcionar junto com filtros
+- Paginação deve se adaptar aos filtros
+- Tratar cenários sem resultado
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### 3. Página de detalhes
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Rota: `/pokemon/[name]`
+- Exibir:
+  - Nome
+  - Imagem
+  - Tipos
+  - Habilidades
+  - Até 5 movimentos principais
+
+### 4. Arquitetura e organização
+
+- Componentes reutilizáveis
+- Camada de serviços HTTP
+- TypeScript obrigatório
+- Separação entre UI e lógica
+- Estrutura clara de pastas
+- Tratamento consistente de erros
+
+### 5. Performance e UX
+
+- Uso adequado de recursos do Next.js
+- SEO básico com Head
+- Evitar chamadas desnecessárias
+- Responsividade
+- Feedback visual de carregamento e erro
+- Navegação fluida
+
+### 6. Testes
+
+- Cobrir listagem, busca, paginação, detalhes e cenários de erro
+
+## ⚙️ Tecnologias obrigatórias
+
+- Next.js v12+
+- React v17+
+- TypeScript
+- CSS Modules, Tailwind ou Styled-components
+- Axios, fetch ou equivalente
+- Ferramenta de testes automatizados
+
+## ✅ Diferenciais
+
+- Deploy na Vercel
+- SSR, SSG ou ISR com justificativa
+- Cache de dados
+- Testes end-to-end
+- Storybook
+- Acessibilidade
+- README técnico
+- ESLint, Prettier, Husky
+- Pipeline CI
+
+---
+
+Boa sorte e divirta-se! 🧢⚡
