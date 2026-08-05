@@ -28,3 +28,13 @@ export function parsePageParam(value: SearchParamValue): number {
   const parsed = Number(raw.trim());
   return parsed >= 1 ? parsed : 1;
 }
+
+/** Tamanho maximo do termo de busca — evita URL absurda vinda de fora. */
+const MAX_QUERY_LENGTH = 50;
+
+/** `?q=` -> termo limpo. Ausente ou so espacos vira `""` (sem filtro). */
+export function parseQueryParam(value: SearchParamValue): string {
+  const raw = firstValue(value);
+  if (!raw) return "";
+  return raw.trim().slice(0, MAX_QUERY_LENGTH);
+}
