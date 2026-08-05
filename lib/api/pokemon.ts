@@ -1,6 +1,6 @@
 import { cacheLife } from "next/cache";
 
-import { pokeApiFetch } from "./http";
+import { PokeApiError, pokeApiFetch } from "./http";
 import { extractIdFromUrl, toPokemonDetail, toPokemonSummary, toPokemonType } from "./mappers";
 import type {
   PokemonDetail,
@@ -46,20 +46,36 @@ export async function getPokemonCatalog(): Promise<PokemonSummary[]> {
 }
 
 /**
- * Detalhe de um pokemon pelo nome (ou ID).
+ * Detalhe de um pokemon pelo nome (ou ID). `null` quando o nome nao existe.
  *
- * Erros 404 sobem como `PokeApiError` com `status: 404` para a rota decidir
- * entre `notFound()` e a UI de erro.
+ * O 404 e valor de retorno, e nao excecao, por causa do `"use cache"`: um erro
+ * lancado aqui dentro atravessa a fronteira do cache sem a identidade de classe,
+ * entao um `instanceof PokeApiError` do outro lado da falso e o `notFound()` da
+ * rota nunca rodaria. O `instanceof` roda aqui, do lado de dentro, onde a
+ * identidade e confiavel.
+ *
+ * "Esse nome nao existe" tambem e uma resposta prevista do dominio, e nao uma
+ * falha — `null` e o tipo honesto, e o `strictNullChecks` obriga todo call site
+ * a tratar. Erros nao-404 continuam sendo lancados: qualquer um deles resulta na
+ * mesma UI de erro, entao nenhum precisa de identidade preservada.
+ *
+ * `null` e cacheado como qualquer outro valor, e isso e o desejado: nome
+ * inexistente nao vira uma requisicao a PokeAPI por acesso.
  */
-export async function getPokemonByName(name: string): Promise<PokemonDetail> {
+export async function getPokemonByName(name: string): Promise<PokemonDetail | null> {
   "use cache";
   cacheLife("max");
 
-  const detail = await pokeApiFetch<PokemonDetailResponse>(
-    `/pokemon/${encodeURIComponent(name.toLowerCase())}`,
-  );
+  try {
+    const detail = await pokeApiFetch<PokemonDetailResponse>(
+      `/pokemon/${encodeURIComponent(name.toLowerCase())}`,
+    );
 
-  return toPokemonDetail(detail);
+    return toPokemonDetail(detail);
+  } catch (error) {
+    if (error instanceof PokeApiError && error.isNotFound) return null;
+    throw error;
+  }
 }
 
 /** Tipos disponiveis, usados apenas para popular as opcoes do filtro. */

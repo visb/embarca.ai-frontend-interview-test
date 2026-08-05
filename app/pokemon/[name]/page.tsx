@@ -5,7 +5,6 @@ import { Suspense } from "react";
 import { PokemonDetail } from "@/components/pokemon/PokemonDetail";
 import { BackLink } from "@/components/ui/BackLink";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { PokeApiError } from "@/lib/api/http";
 import { getPokemonByName, getPokemonCatalog } from "@/lib/api/pokemon";
 import { formatPokedexNumber, formatPokemonName } from "@/lib/format";
 import { buildQuery } from "@/lib/url";
@@ -25,26 +24,24 @@ export async function generateStaticParams() {
  */
 export async function generateMetadata(props: PageProps<"/pokemon/[name]">): Promise<Metadata> {
   const { name } = await props.params;
+  const pokemon = await getPokemonByName(name);
 
-  try {
-    const pokemon = await getPokemonByName(name);
-    const displayName = formatPokemonName(pokemon.name);
-    const title = `${displayName} ${formatPokedexNumber(pokemon.id)}`;
-    const description = `${displayName} e um pokemon do tipo ${pokemon.types.join(" e ")}. Veja habilidades e movimentos.`;
-    const images = pokemon.spriteUrl ? [{ url: pokemon.spriteUrl, alt: displayName }] : undefined;
+  // Nome inexistente nao pode derrubar a rota: metadata neutra e a pagina segue
+  // para o `notFound()`.
+  if (!pokemon) return { title: "Pokemon nao encontrado" };
 
-    return {
-      title,
-      description,
-      alternates: { canonical: `/pokemon/${pokemon.name}` },
-      openGraph: { title, description, type: "article", images },
-      twitter: { card: "summary_large_image", title, description, images },
-    };
-  } catch {
-    // Nome inexistente nao pode derrubar a rota: metadata neutra e a pagina
-    // segue para o `notFound()`.
-    return { title: "Pokemon nao encontrado" };
-  }
+  const displayName = formatPokemonName(pokemon.name);
+  const title = `${displayName} ${formatPokedexNumber(pokemon.id)}`;
+  const description = `${displayName} e um pokemon do tipo ${pokemon.types.join(" e ")}. Veja habilidades e movimentos.`;
+  const images = pokemon.spriteUrl ? [{ url: pokemon.spriteUrl, alt: displayName }] : undefined;
+
+  return {
+    title,
+    description,
+    alternates: { canonical: `/pokemon/${pokemon.name}` },
+    openGraph: { title, description, type: "article", images },
+    twitter: { card: "summary_large_image", title, description, images },
+  };
 }
 
 export default async function PokemonPage(props: PageProps<"/pokemon/[name]">) {
@@ -55,7 +52,11 @@ export default async function PokemonPage(props: PageProps<"/pokemon/[name]">) {
   // Como as 100 rotas validas sao prerenderizadas, o caso so ocorre em URL
   // digitada a mao.
   const { name } = await props.params;
-  const pokemon = await fetchPokemonOr404(name);
+  const pokemon = await getPokemonByName(name);
+
+  // `null` e so "esse nome nao existe". Falha de verdade continua sendo lancada
+  // la dentro e sobe para o `error.tsx`.
+  if (!pokemon) notFound();
 
   return (
     <main id="conteudo" className="mx-auto w-full max-w-4xl px-4 py-10 sm:px-6 lg:px-8">
@@ -84,18 +85,4 @@ async function DetailBackLink({
   });
 
   return <BackLink query={query} />;
-}
-
-/**
- * O try/catch fica fora da renderizacao de proposito: JSX construido dentro de
- * um try nao tem os erros de render capturados por ele.
- */
-async function fetchPokemonOr404(name: string) {
-  try {
-    return await getPokemonByName(name);
-  } catch (error) {
-    // 404 vira um 404 de verdade; qualquer outra falha sobe para o error.tsx.
-    if (error instanceof PokeApiError && error.isNotFound) notFound();
-    throw error;
-  }
 }

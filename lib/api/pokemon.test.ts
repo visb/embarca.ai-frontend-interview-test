@@ -89,18 +89,32 @@ describe("getPokemonByName", () => {
     const detail = await getPokemonByName("pikachu");
 
     expect(detail).toMatchObject({ id: 25, name: "especie25", types: ["grass", "poison"] });
-    expect(detail.abilities.length).toBeGreaterThan(0);
+    expect(detail?.abilities.length).toBeGreaterThan(0);
   });
 
-  test("pokemon inexistente vira erro 404 tipado, que a rota traduz em not-found", async () => {
+  test("pokemon inexistente devolve null, e nao um erro que a rota tenha que reconhecer", async () => {
     pokeApiFetchMock.mockRejectedValue(
       new PokeApiError("Recurso nao encontrado", 404, "/pokemon/nao-existe"),
     );
 
-    const error = await getPokemonByName("nao-existe").catch((caught: unknown) => caught);
+    // Um erro lancado daqui atravessaria a fronteira do `"use cache"` sem a
+    // identidade de classe, e o `instanceof` da rota daria falso — era assim
+    // que o not-found nunca aparecia.
+    await expect(getPokemonByName("nao-existe")).resolves.toBeNull();
+  });
 
-    expect(error).toBeInstanceOf(PokeApiError);
-    expect(error).toMatchObject({ isNotFound: true });
+  test("a API fora do ar continua sendo erro, e nao 'nao encontrado'", async () => {
+    pokeApiFetchMock.mockRejectedValue(new PokeApiError("boom", 500, "/pokemon/pikachu"));
+
+    // Sem este par o `null` engoliria qualquer falha e todo problema viraria
+    // "esse pokemon nao existe".
+    await expect(getPokemonByName("pikachu")).rejects.toMatchObject({ status: 500 });
+  });
+
+  test("falha de rede tambem sobe, em vez de virar null", async () => {
+    pokeApiFetchMock.mockRejectedValue(new PokeApiError("Falha de rede", 0, "/pokemon/pikachu"));
+
+    await expect(getPokemonByName("pikachu")).rejects.toBeInstanceOf(PokeApiError);
   });
 });
 

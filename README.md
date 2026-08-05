@@ -212,13 +212,10 @@ O desenho que sustenta isso:
 
 ## Limitações conhecidas
 
-- **`/pokemon/<nome-inexistente>` cai na UI de erro**, e não na página "não encontrado" — e com
-  status 200. São dois problemas empilhados: o 404 da PokeAPI sobe como `PokeApiError` de dentro
-  de uma função `'use cache'` e o `instanceof` da rota não o reconhece do outro lado da fronteira
-  do cache, então o `notFound()` nunca roda; e, mesmo rodando, `cacheComponents` envia o App Shell
-  antes dele, enquanto `dynamicParams` — que resolveria o status — é incompatível com a feature.
-  Como as 100 rotas válidas são prerenderizadas, o caso só ocorre em URL digitada à mão. O teste
-  correspondente está escrito em `e2e/detalhes.spec.ts`, marcado como pendente.
+- **`/pokemon/<nome-inexistente>` mostra a página "não encontrado", mas com status 200.**
+  `cacheComponents` envia o App Shell antes de o `notFound()` rodar, e `dynamicParams` — que
+  resolveria o status — é incompatível com a feature. A página certa aparece; só o código HTTP
+  mente. Como as 100 rotas válidas são prerenderizadas, o caso só ocorre em URL digitada à mão.
 - Escopo fixo em 100 pokémons.
 - Busca sem tolerância a erro de digitação (substring simples).
 - Filtro de tipo é seleção única, não múltipla.
