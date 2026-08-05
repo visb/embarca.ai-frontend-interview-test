@@ -2,17 +2,15 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 
-import { PokemonGrid } from "@/components/pokemon/PokemonGrid";
+import { InfiniteList } from "@/components/pokemon/InfiniteList";
 import { PokemonGridSkeleton } from "@/components/pokemon/PokemonGridSkeleton";
-import { ResultCount } from "@/components/pokemon/ResultCount";
 import { ResultsArea } from "@/components/pokemon/ResultsArea";
 import { FilterBar } from "@/components/search/FilterBar";
 import { FilterTransitionProvider } from "@/components/search/FilterTransition";
-import { Pagination } from "@/components/ui/Pagination";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { CATALOG_SIZE, getPokemonCatalog, getTypes } from "@/lib/api/pokemon";
 import { applyFilters } from "@/lib/filters";
-import { paginate } from "@/lib/pagination";
+import { paginateCumulative } from "@/lib/pagination";
 import { parsePageParam, parseQueryParam, parseTypeParam } from "@/lib/search-params";
 import { SITE_DESCRIPTION, SITE_NAME } from "@/lib/site";
 
@@ -83,39 +81,30 @@ async function PokemonResults({ searchParams }: Pick<PageProps<"/">, "searchPara
   );
 
   const filtered = applyFilters(catalog, { q, type });
-  const result = paginate(filtered, parsePageParam(params.page));
-
-  const baseParams: Record<string, string> = {};
-  if (q) baseParams.q = q;
-  if (type) baseParams.type = type;
-
-  // Query levada pelos cards, para o detalhe saber com quais filtros voltar.
-  const listingQuery = new URLSearchParams({
-    ...baseParams,
-    ...(result.page > 1 ? { page: String(result.page) } : {}),
-  }).toString();
+  // Acumulado, nao a fatia: com scroll infinito o `?page=N` diz quantas fatias
+  // ja foram carregadas — e o que devolve o usuario ao ponto certo ao voltar.
+  const result = paginateCumulative(filtered, parsePageParam(params.page));
 
   return (
-    <div className="flex flex-col gap-4">
-      <ResultCount total={result.total} />
-
-      <PokemonGrid
-        items={result.items}
-        listingQuery={listingQuery}
-        emptyTitle="Nenhum pokemon encontrado"
-        emptyDescription={buildEmptyDescription(q, type)}
-        emptyAction={
-          <Link
-            href="/"
-            className="mt-2 rounded-full bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300 dark:focus-visible:outline-zinc-100"
-          >
-            Limpar filtros
-          </Link>
-        }
-      />
-
-      <Pagination page={result.page} totalPages={result.totalPages} baseParams={baseParams} />
-    </div>
+    // O `key` reseta o que o scroll anexou quando o conjunto muda: itens de
+    // filtros diferentes nunca convivem na mesma lista.
+    <InfiniteList
+      key={`${q}|${type ?? ""}`}
+      initialItems={result.items}
+      initialPage={result.page}
+      initialHasMore={result.hasMore}
+      total={result.total}
+      filters={{ q, type }}
+      emptyDescription={buildEmptyDescription(q, type)}
+      emptyAction={
+        <Link
+          href="/"
+          className="mt-2 rounded-full bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300 dark:focus-visible:outline-zinc-100"
+        >
+          Limpar filtros
+        </Link>
+      }
+    />
   );
 }
 
