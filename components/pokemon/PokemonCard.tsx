@@ -9,16 +9,30 @@ interface PokemonCardProps {
   pokemon: PokemonSummary;
   /** Query da listagem atual, repassada para o detalhe saber para onde voltar. */
   listingQuery?: string;
+  /**
+   * Tamanho e posicao na lista logica. So a grade virtual passa os dois: com o
+   * DOM parcial, sem eles o leitor de tela contaria as linhas montadas ("4 de
+   * 12") em vez da lista de verdade. Ausentes, o card renderiza como sempre —
+   * quem o envolve ali e um `<li>` de verdade.
+   */
+  setSize?: number;
+  posInSet?: number;
 }
 
-export function PokemonCard({ pokemon, listingQuery = "" }: PokemonCardProps) {
+export function PokemonCard({ pokemon, listingQuery = "", setSize, posInSet }: PokemonCardProps) {
   const displayName = formatPokemonName(pokemon.name);
   const href = listingQuery
     ? `/pokemon/${pokemon.name}?${listingQuery}`
     : `/pokemon/${pokemon.name}`;
+  const inVirtualList = setSize !== undefined && posInSet !== undefined;
 
   return (
-    <article className="h-full">
+    <article
+      className="h-full"
+      role={inVirtualList ? "listitem" : undefined}
+      aria-setsize={setSize}
+      aria-posinset={posInSet}
+    >
       {/*
         O card inteiro e clicavel, mas so o nome e o numero compoem o nome
         acessivel do link — a imagem fica com `alt` complementar para o leitor

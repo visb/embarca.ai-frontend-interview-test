@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { cards } from "./locators";
+import { cards, listSize } from "./locators";
 
 /**
  * A listagem e um Server Component assincrono — o caminho principal do app e o
@@ -19,7 +19,9 @@ test("a home responde 200 com a listagem renderizada pelo servidor", async ({ pa
 test("a primeira visita traz so a primeira fatia, e nao o catalogo inteiro", async ({ page }) => {
   await page.goto("/");
 
-  await expect(cards(page)).toHaveCount(20);
+  // O tamanho da lista, e nao o do DOM: a grade virtual monta so as linhas
+  // visiveis, entao contar cards responderia sobre a janela, nao sobre a fatia.
+  await expect.poll(() => listSize(page)).toBe(20);
 });
 
 test("o primeiro card e o bulbasaur, com a imagem de fato carregada", async ({ page }) => {

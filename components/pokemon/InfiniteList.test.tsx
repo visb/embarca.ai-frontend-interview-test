@@ -53,14 +53,29 @@ function renderList() {
 const cards = () => screen.getAllByRole("link");
 const loadMoreButton = () => screen.getByRole("button", { name: /Carregar mais/ });
 
+/** Tamanho da lista logica, do jeito que o leitor de tela ouve. */
+const announcedListSize = () =>
+  Number(screen.getAllByRole("listitem")[0]?.getAttribute("aria-setsize"));
+
+const viewportHeight = window.innerHeight;
+
 beforeEach(() => {
   loadPokemonPageMock.mockReset();
   vi.stubGlobal("IntersectionObserver", SilentIntersectionObserver);
   window.history.replaceState(null, "", "/");
+  /*
+    Janela alta o bastante para a grade virtual nao ter o que esconder. O jsdom
+    nao tem layout (toda altura medida sai 0), entao o range do virtualizer aqui
+    seria ruido; fixar a janela mantem o resultado deterministico e deixa estes
+    testes no que a story 14 garantiu — itens acumulam, a URL segue o cursor, o
+    filtro reseta. O DOM parcial e assunto de `e2e/virtual-list.spec.ts`.
+  */
+  window.innerHeight = 100_000;
 });
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  window.innerHeight = viewportHeight;
 });
 
 describe("InfiniteList", () => {
@@ -184,6 +199,20 @@ describe("InfiniteList", () => {
         "/pokemon/especie1?q=especie&type=grass&page=2",
       ),
     );
+  });
+
+  test("os cards anunciam o tamanho da lista acumulada, nao o da fatia", async () => {
+    // Sob a grade virtual o `aria-setsize` e o que informa o total a quem usa
+    // leitor de tela: o DOM montado nao serve mais de contagem.
+    loadPokemonPageMock.mockResolvedValue(pageOf(2));
+    const user = userEvent.setup();
+    renderList();
+
+    expect(announcedListSize()).toBe(20);
+
+    await user.click(loadMoreButton());
+
+    await waitFor(() => expect(announcedListSize()).toBe(40));
   });
 
   test("conjunto vazio mostra o estado vazio com a saida oferecida", () => {

@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { BASE_URLS } from "../base-urls";
-import { cards, loadMoreButton } from "../locators";
+import { listSize, loadMoreButton } from "../locators";
 
 /**
  * Fatia que falha no meio do scroll.
@@ -16,7 +16,7 @@ test("fatia que falha preserva os cards ja carregados e oferece nova tentativa",
   page,
 }) => {
   await page.goto("/");
-  await expect(cards(page)).toHaveCount(20);
+  await expect.poll(() => listSize(page)).toBe(20);
 
   await page.route("**/*", async (route) => {
     if (route.request().method() === "POST") {
@@ -31,10 +31,10 @@ test("fatia que falha preserva os cards ja carregados e oferece nova tentativa",
   await expect(page.getByText("Nao foi possivel carregar mais pokemons.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Tentar novamente" })).toBeVisible();
   // Falha de fatia nao pode custar o que ja estava na tela.
-  await expect(cards(page)).toHaveCount(20);
+  expect(await listSize(page)).toBe(20);
 
   await page.unroute("**/*");
   await page.getByRole("button", { name: "Tentar novamente" }).click();
 
-  await expect.poll(() => cards(page).count()).toBeGreaterThanOrEqual(40);
+  await expect.poll(() => listSize(page)).toBeGreaterThanOrEqual(40);
 });

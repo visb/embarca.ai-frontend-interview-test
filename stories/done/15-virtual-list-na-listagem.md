@@ -4,11 +4,11 @@
 
 A grade da listagem passa a renderizar apenas as linhas visíveis (mais overscan), em vez dos N
 cards já carregados. O gatilho de carregamento continua sendo o scroll infinito da
-[14-infinite-scroll-na-listagem](./done/14-infinite-scroll-na-listagem.md) — o que muda é **o que
+[14-infinite-scroll-na-listagem](./14-infinite-scroll-na-listagem.md) — o que muda é **o que
 fica montado no DOM** depois que a fatia chega.
 
-Depende de: [14](./done/14-infinite-scroll-na-listagem.md) (`InfiniteList`, `LoadMoreSentinel`,
-`ListStatus`, `paginateCumulative`, cursor `?page=N`), [03](./done/03-listagem-e-estados.md)
+Depende de: [14](./14-infinite-scroll-na-listagem.md) (`InfiniteList`, `LoadMoreSentinel`,
+`ListStatus`, `paginateCumulative`, cursor `?page=N`), [03](./03-listagem-e-estados.md)
 (`PokemonGrid`, `PokemonCard`), [01-infra-de-testes](./01-infra-de-testes.md) (vitest + playwright
 — **pré-requisito**, a story ainda não está em `done/`).
 
@@ -54,7 +54,7 @@ xl:grid-cols-4` são invisíveis para ele. Manter os dois lados seria duas verda
   O servidor continua mandando os cards de `?page=N` como HTML (`PokemonGrid`, CSS grid, markup de
   hoje). O `VirtualGrid` renderiza exatamente isso enquanto `mounted === false` — o primeiro render
   do cliente bate com o do servidor, sem mismatch — e troca para o modo virtual num `useEffect`.
-  Preserva o que a [08-seo-e-metadata](./done/08-seo-e-metadata.md) entregou e mantém a listagem
+  Preserva o que a [08-seo-e-metadata](./08-seo-e-metadata.md) entregou e mantém a listagem
   legível sem JS na primeira fatia.
 - **Semântica de lista muda de `<ul>/<li>` para `role="list"`/`role="listitem"`.** Com linhas
   posicionadas em absoluto, um `<li>` por linha diria ao leitor de tela "25 itens" quando são 100,

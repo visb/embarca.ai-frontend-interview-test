@@ -5,8 +5,8 @@ import { useCallback, useMemo, useRef, useState, type ReactNode } from "react";
 import { loadPokemonPage } from "@/app/actions";
 import { ListStatus } from "@/components/pokemon/ListStatus";
 import { LoadMoreSentinel } from "@/components/pokemon/LoadMoreSentinel";
-import { PokemonGrid } from "@/components/pokemon/PokemonGrid";
 import { ResultCount } from "@/components/pokemon/ResultCount";
+import { VirtualGrid } from "@/components/pokemon/VirtualGrid";
 import type { PokemonSummary } from "@/lib/api/types";
 import { buildQuery } from "@/lib/url";
 
@@ -94,7 +94,11 @@ export function InfiniteList({
     <div className="flex flex-col gap-4">
       <ResultCount total={total} shown={items.length} />
 
-      <PokemonGrid
+      {/*
+        Grade virtual: o scroll infinito continua anexando a fatia inteira ao
+        estado, mas so as linhas visiveis ficam montadas.
+      */}
+      <VirtualGrid
         items={items}
         listingQuery={listingQuery}
         emptyDescription={emptyDescription}

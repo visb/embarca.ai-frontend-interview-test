@@ -122,6 +122,7 @@ components/
 lib/
   api/                    Única camada com I/O: http, tipos, mappers, serviços
   filters.ts, search.ts   Filtro por tipo e busca por nome (puros)
+  grid.ts                 Colunas da grade por largura de viewport (pura)
   pagination.ts           Paginação em memória (pura)
   search-params.ts        Normalização dos parâmetros de URL (pura)
   url.ts                  Montagem das query strings da listagem (pura)
@@ -183,6 +184,32 @@ caminho único de paginação evita duas implementações divergentes.
 CSS Modules ou styled-components exigiriam trocar o que o `create-next-app` já entregou
 configurado, sem ganho para o tamanho deste projeto.
 
+### 8. Virtual list na grade — e o ganho aqui é **teórico**
+
+A grade monta só as linhas visíveis (mais 3 de overscan), via
+[`@tanstack/react-virtual`](https://tanstack.com/virtual) em modo window scroller. Registrando o
+que importa para quem lê o código depois: **com 100 itens isso não resolve problema nenhum**. São
+~25 linhas no pior caso, nenhuma métrica se move, e a decisão de paginar em memória (nº 6) já
+mantinha o DOM pequeno. A virtualização entrou como demonstração de técnica, com o custo de
+complexidade assumido — não porque houvesse gargalo medido. Nenhum critério de aceite dela é meta
+de performance; o que se garante é comportamento: **o DOM para de crescer junto com a lista**.
+
+O desenho que sustenta isso:
+
+- **Virtualiza por linha, não por card**, e as colunas passam a ser calculadas em JS
+  (`lib/grid.ts`), que vira a fonte da verdade — o virtualizer precisa saber quantos itens cabem
+  numa linha, e `sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4` é invisível para ele. Os
+  breakpoints ficam num lugar só, medidos contra a largura da viewport (a mesma das media
+  queries), para o JS e o CSS não divergirem.
+- **A altura da linha é medida, não estimada.** O card tem imagem `aspect-square`: a altura depende
+  da largura da coluna. `estimateSize` só serve para a primeira pintura.
+- **SSR intacto.** O servidor continua mandando a fatia de `?page=N` como HTML normal, e o primeiro
+  render do cliente repete esse markup — a virtualização só assume depois de hidratar. Sem isso
+  haveria mismatch, e a listagem deixaria de ser legível sem JS.
+- **Semântica de lista sob DOM parcial.** No modo virtual a grade é `role="list"` com
+  `role="listitem"` nos cards, cada um com `aria-setsize`/`aria-posinset`: é o que faz o leitor de
+  tela anunciar "40 de 100" mesmo quando só 20 cards existem no DOM.
+
 ## Limitações conhecidas
 
 - **`/pokemon/<nome-inexistente>` cai na UI de erro**, e não na página "não encontrado" — e com
@@ -195,4 +222,7 @@ configurado, sem ganho para o tamanho deste projeto.
 - Escopo fixo em 100 pokémons.
 - Busca sem tolerância a erro de digitação (substring simples).
 - Filtro de tipo é seleção única, não múltipla.
+- **O Ctrl+F do navegador não acha card fora da viewport**, e **imprimir a página sai truncado** —
+  só o que está montado existe no DOM. São as perdas clássicas de qualquer virtualização; para
+  busca, o caminho suportado é o `?q=` da própria aplicação.
 - Sem Storybook.

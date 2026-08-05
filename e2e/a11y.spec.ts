@@ -1,7 +1,14 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
-import { cards, focusRingWidth, loadMoreButton, searchInput, tabUntilFocused } from "./locators";
+import {
+  cards,
+  focusRingWidth,
+  listSize,
+  loadMoreButton,
+  searchInput,
+  tabUntilFocused,
+} from "./locators";
 import { holdRequests, isSliceRequest } from "./network";
 
 /**
@@ -48,7 +55,7 @@ test("o Tab do topo passa por busca, filtro, primeiro card e o gatilho, nessa or
   page,
 }) => {
   await page.goto("/");
-  await expect(cards(page)).toHaveCount(20);
+  await expect.poll(() => listSize(page)).toBe(20);
 
   // Tabular pelos cards rola a pagina e acorda o scroll infinito: sem segurar a
   // fatia, a ordem mudaria durante a propria conferencia da ordem.
@@ -80,7 +87,7 @@ test("o Tab do topo passa por busca, filtro, primeiro card e o gatilho, nessa or
 
 test("Enter no card navega para o detalhe", async ({ page }) => {
   await page.goto("/");
-  await expect(cards(page)).toHaveCount(20);
+  await expect.poll(() => listSize(page)).toBe(20);
 
   await tabUntilFocused(page, cards(page).first().getByRole("link"));
   await page.keyboard.press("Enter");

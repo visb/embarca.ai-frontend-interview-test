@@ -9,9 +9,36 @@ import { expect, type Locator, type Page } from "@playwright/test";
  * mudanca de marcacao que quebra o leitor de tela.
  */
 
-/** Cards da listagem. Cada card e um `<article>`, entao o papel ja os isola. */
+/**
+ * Cards **montados** na grade.
+ *
+ * Sob virtualizacao o card deixa de ser um `article` para a arvore de
+ * acessibilidade e passa a ser o `listitem` da lista — e so as linhas visiveis
+ * existem no DOM. Os `<li>` dos badges de tipo tambem sao `listitem`, entao o
+ * que separa um do outro e o link que so o card tem.
+ *
+ * Para "quantos itens a lista tem", use `listSize`: contar isto aqui mede a
+ * janela de rolagem, nao a lista.
+ */
 export function cards(page: Page): Locator {
-  return page.getByRole("article");
+  return page.getByRole("listitem").filter({ has: page.getByRole("link") });
+}
+
+/**
+ * Tamanho da lista logica — quantos itens o scroll infinito ja acumulou,
+ * independentemente de quantos estao montados.
+ *
+ * Sai do `aria-setsize`, que e o numero que o leitor de tela anuncia: com o DOM
+ * parcial, ele e a unica leitura honesta do tamanho da lista.
+ */
+export async function listSize(page: Page): Promise<number> {
+  const first = cards(page).first();
+  if ((await first.count()) === 0) return 0;
+
+  const setSize = await first.getAttribute("aria-setsize");
+  // Sem `aria-setsize` a grade nao virtualizou (sem JS, ou antes de hidratar):
+  // ai o DOM ja e a lista inteira.
+  return setSize === null ? cards(page).count() : Number(setSize);
 }
 
 export function searchInput(page: Page): Locator {
@@ -38,6 +65,20 @@ export async function announcedTotal(page: Page): Promise<number> {
 
   const text = (await label.textContent()) ?? "";
   return Number(/^\d+/.exec(text)?.[0]);
+}
+
+/**
+ * Rola ate o meio da lista e espera a grade virtual acompanhar.
+ *
+ * Rolar e sincrono, montar as linhas novas nao: sem esperar, o teste ainda
+ * enxerga a janela do topo e escolheria um card que sai do DOM no quadro
+ * seguinte. O sinal de que o virtualizer reagiu e o primeiro card montado
+ * deixar de ser o item 1 da lista.
+ */
+export async function scrollToMiddle(page: Page): Promise<void> {
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight / 2));
+
+  await expect.poll(() => cards(page).first().getAttribute("aria-posinset")).not.toBe("1");
 }
 
 /**

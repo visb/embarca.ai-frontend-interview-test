@@ -71,4 +71,30 @@ describe("PokemonCard", () => {
       "/pokemon/pikachu?q=pika&type=electric&page=2",
     );
   });
+
+  test("fora da grade virtual o card nao inventa papel de item de lista", () => {
+    // Na grade pre-hidratacao quem lista e o `<ul>/<li>` do `PokemonGrid`;
+    // repetir o papel aqui daria dois itens para o mesmo card.
+    render(<PokemonCard pokemon={makeSummary()} />);
+
+    const card = screen.getByRole("article");
+    expect(card).not.toHaveAttribute("aria-setsize");
+    expect(card).not.toHaveAttribute("aria-posinset");
+  });
+
+  test("na grade virtual o card vira item de lista e anuncia a posicao real", () => {
+    render(<PokemonCard pokemon={makeSummary()} setSize={100} posInSet={25} />);
+
+    // O primeiro em ordem de documento e o card; o outro e o badge de tipo,
+    // que vive dentro dele.
+    const [card] = screen.getAllByRole("listitem");
+    expect(card).toHaveAttribute("aria-setsize", "100");
+    expect(card).toHaveAttribute("aria-posinset", "25");
+  });
+
+  test("virar item de lista nao mexe no nome acessivel do link", () => {
+    render(<PokemonCard pokemon={makeSummary()} setSize={100} posInSet={25} />);
+
+    expect(screen.getByRole("link", { name: "Pikachu, numero 25" })).toBeInTheDocument();
+  });
 });

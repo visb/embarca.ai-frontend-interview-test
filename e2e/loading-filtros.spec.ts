@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 
-import { cards, searchInput, typeFilter } from "./locators";
+import { cards, listSize, searchInput, typeFilter } from "./locators";
 import { holdRequests, isFilterNavigation } from "./network";
 
 /**
@@ -27,7 +27,7 @@ function resultsArea(page: Page) {
 
 test("enquanto a navegacao nao volta, o campo continua editavel e com foco", async ({ page }) => {
   await page.goto("/");
-  await expect(cards(page)).toHaveCount(20);
+  await expect.poll(() => listSize(page)).toBe(20);
 
   const release = await holdRequests(page, isFilterNavigation);
 
@@ -55,7 +55,7 @@ test("enquanto a navegacao nao volta, o campo continua editavel e com foco", asy
 
 test("navegacao de filtro que resolve sozinha nao deixa o indicador aceso", async ({ page }) => {
   await page.goto("/");
-  await expect(cards(page)).toHaveCount(20);
+  await expect.poll(() => listSize(page)).toBe(20);
 
   await typeFilter(page).selectOption("fire");
 

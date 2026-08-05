@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { announcedTotal, cards, searchInput, typeFilter } from "./locators";
+import { announcedTotal, cards, listSize, searchInput, typeFilter } from "./locators";
 
 /**
  * O que prova o filtro nao e a grade encolher — e *todo* card que sobrou
@@ -10,7 +10,7 @@ import { announcedTotal, cards, searchInput, typeFilter } from "./locators";
 
 test("filtrar por tipo deixa na tela apenas cards com aquele badge", async ({ page }) => {
   await page.goto("/");
-  await expect(cards(page)).toHaveCount(20);
+  await expect.poll(() => listSize(page)).toBe(20);
 
   await typeFilter(page).selectOption("fire");
 
@@ -48,7 +48,7 @@ test("combinacao impossivel cai no estado vazio, e limpar restaura a lista", asy
   await page.getByRole("link", { name: "Limpar filtros" }).first().click();
 
   await expect(page).toHaveURL("/");
-  await expect(cards(page)).toHaveCount(20);
+  await expect.poll(() => listSize(page)).toBe(20);
 });
 
 test("URL com busca, tipo e pagina colada direto renderiza o estado certo", async ({ page }) => {
