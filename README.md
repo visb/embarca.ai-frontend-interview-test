@@ -29,18 +29,39 @@ fallback para `http://localhost:3000`.
 
 ## Scripts
 
-| Script                  | O que faz                                        |
-| ----------------------- | ------------------------------------------------ |
-| `pnpm dev`              | Servidor de desenvolvimento                      |
-| `pnpm build`            | Build de produção (prerenderiza as 100 rotas)    |
-| `pnpm start`            | Sobe o build de produção                         |
-| `pnpm run lint`         | ESLint                                           |
-| `pnpm run typecheck`    | `tsc --noEmit`                                   |
-| `pnpm run format`       | Prettier em modo escrita                         |
-| `pnpm run format:check` | Prettier em modo verificação (é o que o CI roda) |
+| Script                   | O que faz                                        |
+| ------------------------ | ------------------------------------------------ |
+| `pnpm dev`               | Servidor de desenvolvimento                      |
+| `pnpm build`             | Build de produção (prerenderiza as 100 rotas)    |
+| `pnpm start`             | Sobe o build de produção                         |
+| `pnpm run lint`          | ESLint                                           |
+| `pnpm run typecheck`     | `tsc --noEmit`                                   |
+| `pnpm run format`        | Prettier em modo escrita                         |
+| `pnpm run format:check`  | Prettier em modo verificação (é o que o CI roda) |
+| `pnpm test`              | Vitest (unit e componente), execução única       |
+| `pnpm run test:watch`    | Vitest em watch                                  |
+| `pnpm run test:coverage` | Vitest com relatório de cobertura                |
+| `pnpm run test:e2e`      | Playwright contra o build de produção            |
 
 > No Windows, use `pnpm run lint` — `pnpm lint` pode colidir com o `lint.bat` do Android SDK
 > caso ele esteja no `PATH`.
+
+## Testes
+
+Dois runners, por uma razão: os docs do Next dizem que o Vitest não suporta Server Components
+assíncronos e recomendam e2e para eles — e a listagem e a página de detalhe são exatamente isso.
+
+- **Vitest + Testing Library** (`*.test.tsx`, colocados junto do componente) para componentes
+  síncronos e código de `lib/`.
+- **Playwright** (`e2e/*.spec.ts`) para os fluxos que passam pelo servidor.
+
+O Playwright sobe o próprio servidor: por padrão `pnpm build && pnpm start`. Antes da primeira
+execução, baixe o browser com `pnpm exec playwright install chromium`.
+
+```bash
+PW_DEV=1 pnpm run test:e2e     # usa `next dev` em vez do build, para iterar mais rápido
+PORT=3100 pnpm run test:e2e    # outra porta, quando a 3000 já está ocupada
+```
 
 ## Deploy
 
