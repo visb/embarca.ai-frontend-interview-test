@@ -23,6 +23,8 @@ const eslintConfig = defineConfig([
   globalIgnores([
     // Default ignores of eslint-config-next:
     ".next/**",
+    // Builds paralelos que a suite e2e sobe para o caminho de erro.
+    ".next-e2e-*/**",
     "out/**",
     "build/**",
     "next-env.d.ts",

@@ -19,6 +19,8 @@
 # next.js
 /.next/
 /out/
+# Builds paralelos que a suite e2e sobe para o caminho de erro (NEXT_DIST_DIR).
+/.next-e2e-*/
 
 # production
 /build

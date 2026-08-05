@@ -6,7 +6,23 @@
  * `Response` crua nem diferenciar erro de rede de erro de parse.
  */
 
-export const POKEAPI_BASE_URL = "https://pokeapi.co/api/v2";
+/** Base publica da PokeAPI. E o valor usado sempre que nada sobrescreve. */
+export const DEFAULT_POKEAPI_BASE_URL = "https://pokeapi.co/api/v2";
+
+/**
+ * Base efetiva das requisicoes.
+ *
+ * `POKEAPI_BASE_URL` existe para a suite e2e apontar o app para um servidor de
+ * fixtures local: todo I/O deste projeto e server-side, entao nao ha como
+ * interceptar a PokeAPI pelo browser — sem esta valvula, o caminho de erro
+ * (500, rede fora) ficaria sem cobertura. Ausente ou vazia, cai na API publica.
+ *
+ * Lida a cada chamada, e nao uma vez no import, para o valor acompanhar o
+ * processo que estiver rodando (build, `next start` ou teste).
+ */
+export function pokeApiBaseUrl(): string {
+  return process.env.POKEAPI_BASE_URL?.trim() || DEFAULT_POKEAPI_BASE_URL;
+}
 
 /** Erro de dominio da PokeAPI. `status` 0 significa falha antes da resposta. */
 export class PokeApiError extends Error {
@@ -33,7 +49,7 @@ export class PokeApiError extends Error {
  * API, ja que a PokeAPI devolve URLs completas dentro dos payloads.
  */
 export async function pokeApiFetch<T>(path: string, init?: RequestInit): Promise<T> {
-  const url = path.startsWith("http") ? path : `${POKEAPI_BASE_URL}${path}`;
+  const url = path.startsWith("http") ? path : `${pokeApiBaseUrl()}${path}`;
 
   let response: Response;
   try {

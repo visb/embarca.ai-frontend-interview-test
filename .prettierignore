@@ -2,6 +2,8 @@
 .claude
 
 .next
+.next-e2e-catalogo
+.next-e2e-detalhe
 node_modules
 pnpm-lock.yaml
 public

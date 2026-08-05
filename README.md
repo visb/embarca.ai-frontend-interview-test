@@ -20,9 +20,12 @@ cp .env.example .env.local   # opcional em dev
 pnpm dev
 ```
 
-A única variável de ambiente é `NEXT_PUBLIC_SITE_URL`, usada pelo `metadataBase` para montar as
-URLs absolutas de Open Graph e pelo `sitemap.xml`/`robots.txt`. Em desenvolvimento ela tem
-fallback para `http://localhost:3000`.
+Duas variáveis de ambiente:
+
+| Variável               | Para quê                                                                                                                                      |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_SITE_URL` | `metadataBase` (URLs absolutas de Open Graph) e `sitemap.xml`/`robots.txt`. Fallback: `http://localhost:3000`.                                |
+| `POKEAPI_BASE_URL`     | Base da PokeAPI. Existe para a suíte e2e apontar o app ao mock de fixtures; ausente ou vazia, volta sozinha para `https://pokeapi.co/api/v2`. |
 
 > O primeiro `pnpm build` faz 1 + 100 requisições à PokeAPI para montar o catálogo e
 > prerenderizar as rotas de detalhe. Se a API estiver instável, o build falha — basta repetir.
@@ -55,13 +58,37 @@ assíncronos e recomendam e2e para eles — e a listagem e a página de detalhe 
   síncronos e código de `lib/`.
 - **Playwright** (`e2e/*.spec.ts`) para os fluxos que passam pelo servidor.
 
-O Playwright sobe o próprio servidor: por padrão `pnpm build && pnpm start`. Antes da primeira
-execução, baixe o browser com `pnpm exec playwright install chromium`.
+Antes da primeira execução, baixe o browser com `pnpm exec playwright install chromium`.
+
+### Mock da PokeAPI
+
+Todo I/O com a PokeAPI é server-side, então `page.route` não intercepta nada dele — só o POST da
+server action, que sai do browser. Por isso o Playwright sobe um **servidor de fixtures**
+(`e2e/mock-api/`, `node:http`, sem dependência nova) e aponta o app para ele via
+`POKEAPI_BASE_URL`. Três ganhos: o `pnpm build` da suíte não depende das 1 + 100 requisições à API
+real, a suíte roda offline, e o caminho de erro (500) passa a ser encenável.
+
+O modo do mock vem de `MOCK_MODE`: `ok` (padrão), `fail-catalog` e `fail-detail`.
+
+### Os dois projetos
+
+| Projeto          | O que roda            | Servidor                                      |
+| ---------------- | --------------------- | --------------------------------------------- |
+| `chromium`       | `e2e/*.spec.ts`       | `pnpm build && pnpm start` com o mock em `ok` |
+| `chromium-erros` | `e2e/erros/*.spec.ts` | `next dev` com o mock já em modo de falha     |
+
+O caminho de erro é projeto separado porque o catálogo é cacheado com `cacheLife('max')`: depois
+do primeiro sucesso, derrubar a API não produz erro nenhum — o cache responde. O app do erro
+precisa subir já falhando, e em `next dev` (com um build, o prerender das 100 rotas não passaria).
 
 ```bash
-PW_DEV=1 pnpm run test:e2e     # usa `next dev` em vez do build, para iterar mais rápido
-PORT=3100 pnpm run test:e2e    # outra porta, quando a 3000 já está ocupada
+PW_DEV=1 pnpm run test:e2e                      # `next dev` no caminho feliz, para iterar mais rápido
+PORT=4000 pnpm run test:e2e                     # outra faixa de portas, quando a 3000 já está ocupada
+PW_LIVE=1 pnpm run test:e2e --project=chromium  # sem mock, contra a PokeAPI real
 ```
+
+`PW_LIVE=1` serve para pegar mudança de contrato da API de verdade. Não é o padrão nem entra no
+CI, e os poucos casos calibrados no catálogo sintético se declaram fora dele.
 
 ## Deploy
 
@@ -98,6 +125,10 @@ lib/
   pagination.ts           Paginação em memória (pura)
   search-params.ts        Normalização dos parâmetros de URL (pura)
   url.ts                  Montagem das query strings da listagem (pura)
+e2e/                      Specs do Playwright
+  erros/                  Caminho de erro (projeto `chromium-erros`)
+  mock-api/               Servidor de fixtures da PokeAPI
+test/fixtures/            Factories usadas pelos testes do Vitest
 docs/desafio.md           Enunciado original
 stories/                  Uma story por entrega, com as decisões
 ```
@@ -154,13 +185,14 @@ configurado, sem ganho para o tamanho deste projeto.
 
 ## Limitações conhecidas
 
-- **`/pokemon/<nome-inexistente>` responde 200**, não 404, apesar de mostrar a página
-  "não encontrado". Com `cacheComponents` o App Shell é enviado antes de o `notFound()` rodar, e
-  `dynamicParams` — que resolveria — é incompatível com Cache Components. Como as 100 rotas
-  válidas são prerenderizadas, o caso só ocorre em URL digitada à mão.
-- **Sem testes automatizados.** Foram deixados fora do escopo deste projeto; a verificação de
-  cada entrega foi manual, contra o build de produção.
-- Escopo fixo em 100 pokémons, sem scroll infinito.
+- **`/pokemon/<nome-inexistente>` cai na UI de erro**, e não na página "não encontrado" — e com
+  status 200. São dois problemas empilhados: o 404 da PokeAPI sobe como `PokeApiError` de dentro
+  de uma função `'use cache'` e o `instanceof` da rota não o reconhece do outro lado da fronteira
+  do cache, então o `notFound()` nunca roda; e, mesmo rodando, `cacheComponents` envia o App Shell
+  antes dele, enquanto `dynamicParams` — que resolveria o status — é incompatível com a feature.
+  Como as 100 rotas válidas são prerenderizadas, o caso só ocorre em URL digitada à mão. O teste
+  correspondente está escrito em `e2e/detalhes.spec.ts`, marcado como pendente.
+- Escopo fixo em 100 pokémons.
 - Busca sem tolerância a erro de digitação (substring simples).
 - Filtro de tipo é seleção única, não múltipla.
 - Sem Storybook.
