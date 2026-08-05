@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
@@ -6,6 +7,7 @@ import { BackLink } from "@/components/ui/BackLink";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { PokeApiError } from "@/lib/api/http";
 import { getPokemonByName, getPokemonCatalog } from "@/lib/api/pokemon";
+import { formatPokedexNumber, formatPokemonName } from "@/lib/format";
 import { buildQuery } from "@/lib/url";
 
 /**
@@ -15,6 +17,36 @@ import { buildQuery } from "@/lib/url";
 export async function generateStaticParams() {
   const catalog = await getPokemonCatalog();
   return catalog.map((pokemon) => ({ name: pokemon.name }));
+}
+
+/**
+ * Metadata com dados reais do pokemon — e o que gera valor de SEO de verdade.
+ * Reusa a mesma funcao cacheada da pagina, entao nao custa request extra.
+ */
+export async function generateMetadata(
+  props: PageProps<"/pokemon/[name]">,
+): Promise<Metadata> {
+  const { name } = await props.params;
+
+  try {
+    const pokemon = await getPokemonByName(name);
+    const displayName = formatPokemonName(pokemon.name);
+    const title = `${displayName} ${formatPokedexNumber(pokemon.id)}`;
+    const description = `${displayName} e um pokemon do tipo ${pokemon.types.join(" e ")}. Veja habilidades e movimentos.`;
+    const images = pokemon.spriteUrl ? [{ url: pokemon.spriteUrl, alt: displayName }] : undefined;
+
+    return {
+      title,
+      description,
+      alternates: { canonical: `/pokemon/${pokemon.name}` },
+      openGraph: { title, description, type: "article", images },
+      twitter: { card: "summary_large_image", title, description, images },
+    };
+  } catch {
+    // Nome inexistente nao pode derrubar a rota: metadata neutra e a pagina
+    // segue para o `notFound()`.
+    return { title: "Pokemon nao encontrado" };
+  }
 }
 
 export default async function PokemonPage(props: PageProps<"/pokemon/[name]">) {
