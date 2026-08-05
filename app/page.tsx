@@ -5,7 +5,9 @@ import { Suspense } from "react";
 import { PokemonGrid } from "@/components/pokemon/PokemonGrid";
 import { PokemonGridSkeleton } from "@/components/pokemon/PokemonGridSkeleton";
 import { ResultCount } from "@/components/pokemon/ResultCount";
+import { ResultsArea } from "@/components/pokemon/ResultsArea";
 import { FilterBar } from "@/components/search/FilterBar";
+import { FilterTransitionProvider } from "@/components/search/FilterTransition";
 import { Pagination } from "@/components/ui/Pagination";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { CATALOG_SIZE, getPokemonCatalog, getTypes } from "@/lib/api/pokemon";
@@ -48,15 +50,23 @@ export default function Home(props: PageProps<"/">) {
         atras do seu Suspense: o cabecalho vai no shell prerenderizado e os
         dois streamam em paralelo, sem um esperar o outro.
       */}
-      <div className="mb-6">
-        <Suspense fallback={<Skeleton className="h-16 w-full sm:max-w-md" />}>
-          <FilterBar />
-        </Suspense>
-      </div>
+      {/*
+        Provider acima dos dois blocos: o controle que disparou a navegacao
+        mostra o spinner e o resultado se esmaece a partir do mesmo estado.
+      */}
+      <FilterTransitionProvider>
+        <div className="mb-6">
+          <Suspense fallback={<Skeleton className="h-16 w-full sm:max-w-md" />}>
+            <FilterBar />
+          </Suspense>
+        </div>
 
-      <Suspense fallback={<PokemonGridSkeleton />}>
-        <PokemonResults searchParams={props.searchParams} />
-      </Suspense>
+        <ResultsArea>
+          <Suspense fallback={<PokemonGridSkeleton />}>
+            <PokemonResults searchParams={props.searchParams} />
+          </Suspense>
+        </ResultsArea>
+      </FilterTransitionProvider>
     </main>
   );
 }

@@ -1,15 +1,17 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
+import { useFilterTransition } from "@/components/search/FilterTransition";
+import { PendingIndicator } from "@/components/ui/PendingIndicator";
 import { buildQuery, listingHref } from "@/lib/url";
 
 /** Espera antes de navegar. Curto o bastante para parecer instantaneo. */
 const DEBOUNCE_MS = 300;
 
 export function SearchInput() {
-  const router = useRouter();
+  const { pending, signalPending, navigate } = useFilterTransition();
   const searchParams = useSearchParams();
   const urlTerm = searchParams.get("q") ?? "";
 
@@ -34,6 +36,8 @@ export function SearchInput() {
   function handleChange(value: string) {
     setTerm(value);
     isTypingRef.current = true;
+    // Feedback ja na primeira tecla: o debounce abaixo so navega 300ms depois.
+    signalPending();
 
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     timeoutRef.current = setTimeout(() => {
@@ -42,7 +46,7 @@ export function SearchInput() {
       // enquanto `searchParams` pode estar defasada no shell prerenderizado.
       const query = buildQuery(window.location.search, { q: value });
       // `replace`, nao `push`: senao o historico ganha uma entrada por letra.
-      router.replace(listingHref(query), { scroll: false });
+      navigate(listingHref(query));
     }, DEBOUNCE_MS);
   }
 
@@ -63,17 +67,22 @@ export function SearchInput() {
           onChange={(event) => handleChange(event.target.value)}
           placeholder="pikachu"
           autoComplete="off"
-          className="h-10 w-full rounded-md border border-zinc-300 bg-white px-3 pr-16 text-sm text-zinc-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:focus-visible:outline-zinc-100"
+          // Nunca `disabled` durante o pending: bloquear a digitacao no meio da
+          // transicao tiraria o foco e e pior que exibir resultado defasado.
+          className="h-10 w-full rounded-md border border-zinc-300 bg-white px-3 pr-24 text-sm text-zinc-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:focus-visible:outline-zinc-100"
         />
-        {term ? (
-          <button
-            type="button"
-            onClick={() => handleChange("")}
-            className="absolute top-1/2 right-2 -translate-y-1/2 rounded px-2 py-1 text-xs font-medium text-zinc-600 hover:text-zinc-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 dark:focus-visible:outline-zinc-100"
-          >
-            Limpar
-          </button>
-        ) : null}
+        <div className="absolute top-1/2 right-2 flex -translate-y-1/2 items-center gap-1">
+          {term ? (
+            <button
+              type="button"
+              onClick={() => handleChange("")}
+              className="rounded px-2 py-1 text-xs font-medium text-zinc-600 hover:text-zinc-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 dark:focus-visible:outline-zinc-100"
+            >
+              Limpar
+            </button>
+          ) : null}
+          <PendingIndicator pending={pending} />
+        </div>
       </div>
     </div>
   );
