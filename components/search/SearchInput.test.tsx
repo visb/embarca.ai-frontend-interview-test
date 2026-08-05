@@ -44,6 +44,7 @@ function setup(initialUrl = "/") {
 }
 
 const input = () => screen.getByLabelText("Buscar por nome");
+const clearSearch = () => screen.getByRole("button", { name: "Limpar busca" });
 const clearFilters = () => screen.getByRole("link", { name: "Limpar filtros" });
 
 /** Deixa o debounce vencer e a navegacao commitar. */
@@ -127,7 +128,7 @@ describe("SearchInput", () => {
   test("limpar a busca tira o termo da URL em vez de deixar uma chave vazia", async () => {
     const user = setup("/?q=pika");
 
-    await user.click(screen.getByRole("button", { name: "Limpar" }));
+    await user.click(clearSearch());
     await settleDebounce();
 
     expect(input()).toHaveValue("");
@@ -138,11 +139,39 @@ describe("SearchInput", () => {
   test("o botao de limpar so aparece quando ha o que limpar", async () => {
     const user = setup();
 
-    expect(screen.queryByRole("button", { name: "Limpar" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Limpar busca" })).not.toBeInTheDocument();
 
     await user.type(input(), "p");
 
-    expect(screen.getByRole("button", { name: "Limpar" })).toBeInTheDocument();
+    expect(clearSearch()).toBeInTheDocument();
+  });
+
+  test("o botao so-icone continua exposto pelo nome acessivel", () => {
+    setup("/?q=pika");
+
+    // Trocar texto por icone nao pode custar acessibilidade: sem texto visivel,
+    // o nome vem do `aria-label` e o desenho fica `aria-hidden`.
+    expect(clearSearch()).toBeInTheDocument();
+    expect(clearSearch()).toHaveTextContent("");
+  });
+
+  test("limpar a busca pelo icone preserva o filtro de tipo", async () => {
+    const user = setup("/?q=pika&type=electric");
+
+    await user.click(clearSearch());
+    await settleDebounce();
+
+    // O botao do campo limpa so o campo — quem zera tudo e o "Limpar filtros".
+    expect(new URLSearchParams(window.location.search).get("q")).toBeNull();
+    expect(new URLSearchParams(window.location.search).get("type")).toBe("electric");
+  });
+
+  test("limpar busca e limpar filtros sao dois controles distintos na mesma tela", () => {
+    setup("/?q=pika");
+
+    // Dois "Limpar" identicos na lista de elementos do leitor de tela nao
+    // diriam qual zera o campo e qual zera tudo.
+    expect(clearSearch()).not.toBe(clearFilters());
   });
 
   test("o campo nunca e bloqueado durante a busca e mantem o foco", async () => {

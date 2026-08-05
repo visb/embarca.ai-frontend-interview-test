@@ -87,15 +87,36 @@ export function SearchInput() {
           autoComplete="off"
           // Nunca `disabled` durante o pending: bloquear a digitacao no meio da
           // transicao tiraria o foco e e pior que exibir resultado defasado.
-          className="h-10 w-full rounded-md border border-zinc-300 bg-white px-3 pr-16 text-sm text-zinc-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:focus-visible:outline-zinc-100"
+          className="h-10 w-full rounded-md border border-zinc-300 bg-white px-3 pr-10 text-sm text-zinc-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:focus-visible:outline-zinc-100"
         />
         {term ? (
           <button
             type="button"
             onClick={() => handleChange("")}
-            className="absolute top-1/2 right-2 -translate-y-1/2 rounded px-2 py-1 text-xs font-medium text-zinc-600 hover:text-zinc-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 dark:focus-visible:outline-zinc-100"
+            // Nome acessivel proprio: sem o contexto visual do campo, um
+            // "Limpar" solto na lista de elementos nao se distingue do
+            // "Limpar filtros" da barra.
+            aria-label="Limpar busca"
+            className="absolute top-1/2 right-2 flex size-7 -translate-y-1/2 items-center justify-center rounded text-zinc-600 hover:text-zinc-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 dark:focus-visible:outline-zinc-100"
           >
-            Limpar
+            {/*
+              SVG inline em vez de lib de icones: um unico icone nao paga o
+              custo de bundle. Decorativo — quem nomeia o botao e o `aria-label`,
+              entao o desenho fica fora da arvore de acessibilidade.
+            */}
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              strokeLinecap="round"
+              className="size-4"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <path d="M6 6 18 18" />
+              <path d="M18 6 6 18" />
+            </svg>
           </button>
         ) : null}
       </div>
