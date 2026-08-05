@@ -13,7 +13,7 @@ export default function PokemonErrorPage({ error, retry }: ErrorPageProps) {
   }, [error]);
 
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-col items-center gap-4 px-4 py-24 text-center">
+    <main id="conteudo" className="mx-auto flex w-full max-w-2xl flex-col items-center gap-4 px-4 py-24 text-center">
       <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
         Nao foi possivel carregar este pokemon
       </h1>

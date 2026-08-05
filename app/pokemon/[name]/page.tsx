@@ -50,15 +50,17 @@ export async function generateMetadata(
 }
 
 export default async function PokemonPage(props: PageProps<"/pokemon/[name]">) {
-  // `params` e lido aqui, e nao dentro do Suspense, para o `notFound()` chegar
-  // a tempo de virar um 404 de verdade: depois que o shell e enviado, o status
-  // ja foi. Como as 100 rotas validas sao prerenderizadas, o unico caso que
-  // perde o shell instantaneo e justamente o nome inexistente.
+  // `params` e lido aqui, e nao dentro do Suspense, para o `notFound()` rodar o
+  // mais cedo possivel. Com `cacheComponents` o App Shell ainda e enviado antes,
+  // entao um nome inexistente mostra a pagina not-found com status 200 — e
+  // `dynamicParams` (que resolveria) e incompativel com Cache Components.
+  // Como as 100 rotas validas sao prerenderizadas, o caso so ocorre em URL
+  // digitada a mao.
   const { name } = await props.params;
   const pokemon = await fetchPokemonOr404(name);
 
   return (
-    <main className="mx-auto w-full max-w-4xl px-4 py-10 sm:px-6 lg:px-8">
+    <main id="conteudo" className="mx-auto w-full max-w-4xl px-4 py-10 sm:px-6 lg:px-8">
       {/* `searchParams` continua atras do boundary: so o link de volta depende dele. */}
       <div className="mb-8">
         <Suspense fallback={<Skeleton className="h-5 w-48" />}>

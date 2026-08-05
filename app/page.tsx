@@ -29,15 +29,19 @@ export const metadata: Metadata = {
 
 export default function Home(props: PageProps<"/">) {
   return (
-    <main className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
-      <header className="mb-6 flex flex-col gap-2">
+    <main id="conteudo" className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
+      {/*
+        `div`, nao `header`: um `<header>` dentro de `<main>` vira landmark
+        `banner` aninhado, o que confunde a navegacao por landmarks.
+      */}
+      <div className="mb-6 flex flex-col gap-2">
         <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
           Pokedex
         </h1>
         <p className="text-zinc-600 dark:text-zinc-400">
           Os {CATALOG_SIZE} primeiros pokemons da PokeAPI.
         </p>
-      </header>
+      </div>
 
       {/*
         Controles e resultado dependem da requisicao, entao cada bloco fica

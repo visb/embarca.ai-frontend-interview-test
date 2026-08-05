@@ -18,6 +18,9 @@ function hrefForPage(page: number, baseParams: Record<string, string>): string {
 const CONTROL_CLASSES =
   "inline-flex h-9 min-w-9 items-center justify-center rounded-md border border-zinc-300 px-3 text-sm dark:border-zinc-700";
 
+const LINK_CLASSES =
+  "text-zinc-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-900 hover:bg-zinc-100 dark:text-zinc-100 dark:focus-visible:outline-zinc-100 dark:hover:bg-zinc-800";
+
 export function Pagination({ page, totalPages, baseParams = {} }: PaginationProps) {
   if (totalPages <= 1) return null;
 
@@ -32,7 +35,7 @@ export function Pagination({ page, totalPages, baseParams = {} }: PaginationProp
             <Link
               href={hrefForPage(page - 1, baseParams)}
               rel="prev"
-              className={`${CONTROL_CLASSES} text-zinc-900 hover:bg-zinc-100 dark:text-zinc-100 dark:hover:bg-zinc-800`}
+              className={`${CONTROL_CLASSES} ${LINK_CLASSES}`}
             >
               Anterior
             </Link>
@@ -54,7 +57,7 @@ export function Pagination({ page, totalPages, baseParams = {} }: PaginationProp
               <Link
                 href={hrefForPage(pageNumber, baseParams)}
                 aria-label={`Pagina ${pageNumber}`}
-                className={`${CONTROL_CLASSES} text-zinc-900 hover:bg-zinc-100 dark:text-zinc-100 dark:hover:bg-zinc-800`}
+                className={`${CONTROL_CLASSES} ${LINK_CLASSES}`}
               >
                 {pageNumber}
               </Link>
@@ -67,7 +70,7 @@ export function Pagination({ page, totalPages, baseParams = {} }: PaginationProp
             <Link
               href={hrefForPage(page + 1, baseParams)}
               rel="next"
-              className={`${CONTROL_CLASSES} text-zinc-900 hover:bg-zinc-100 dark:text-zinc-100 dark:hover:bg-zinc-800`}
+              className={`${CONTROL_CLASSES} ${LINK_CLASSES}`}
             >
               Proxima
             </Link>

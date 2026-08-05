@@ -2,7 +2,9 @@ import { Skeleton } from "@/components/ui/Skeleton";
 
 export default function LoadingPokemonDetail() {
   return (
-    <main className="mx-auto w-full max-w-4xl px-4 py-10 sm:px-6 lg:px-8">
+    // `div`, nao `main`: ver app/loading.tsx — dois landmarks convivendo
+    // durante o streaming e pior do que nenhum.
+    <div className="mx-auto w-full max-w-4xl px-4 py-10 sm:px-6 lg:px-8">
       <p className="sr-only" role="status">
         Carregando pokemon
       </p>
@@ -21,6 +23,6 @@ export default function LoadingPokemonDetail() {
         <Skeleton className="h-24 w-full" />
         <Skeleton className="h-24 w-full" />
       </div>
-    </main>
+    </div>
   );
 }

@@ -18,7 +18,8 @@ export function PokemonDetail({ pokemon }: PokemonDetailProps) {
 
   return (
     <article className="flex flex-col gap-8">
-      <header className="flex flex-col gap-6 sm:flex-row sm:items-center">
+      {/* `div`, nao `header`: dentro de `<main>` ele viraria um `banner` aninhado. */}
+      <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
         <div className="relative aspect-square w-full max-w-xs shrink-0 overflow-hidden rounded-2xl bg-zinc-100 dark:bg-zinc-900">
           {pokemon.spriteUrl ? (
             <Image
@@ -62,10 +63,13 @@ export function PokemonDetail({ pokemon }: PokemonDetailProps) {
             </div>
           </dl>
         </div>
-      </header>
+      </div>
 
-      <section className="flex flex-col gap-3">
-        <h2 className={SECTION_TITLE}>Habilidades</h2>
+      {/* `<section>` vira landmark `region`; sem nome acessivel ele so polui a lista. */}
+      <section aria-labelledby="habilidades" className="flex flex-col gap-3">
+        <h2 id="habilidades" className={SECTION_TITLE}>
+          Habilidades
+        </h2>
         <ul className="flex flex-wrap gap-2">
           {pokemon.abilities.map((ability) => (
             <li key={ability.name} className={CHIP}>
@@ -80,8 +84,10 @@ export function PokemonDetail({ pokemon }: PokemonDetailProps) {
         </ul>
       </section>
 
-      <section className="flex flex-col gap-3">
-        <h2 className={SECTION_TITLE}>Movimentos</h2>
+      <section aria-labelledby="movimentos" className="flex flex-col gap-3">
+        <h2 id="movimentos" className={SECTION_TITLE}>
+          Movimentos
+        </h2>
         {/*
           A PokeAPI nao expoe ranking de relevancia, entao o criterio e
           explicito na propria UI em vez de fingir uma metrica de "principal".
