@@ -45,7 +45,7 @@ function renderList() {
       initialPage={1}
       initialHasMore
       total={catalog.length}
-      filters={{ q: "" }}
+      filters={{ q: "", types: [] }}
     />,
   );
 }
@@ -157,6 +157,47 @@ describe("InfiniteList", () => {
     expect(screen.queryByRole("button", { name: /Carregar mais/ })).not.toBeInTheDocument();
   });
 
+  test("os tipos marcados viajam com o pedido da fatia seguinte", async () => {
+    loadPokemonPageMock.mockResolvedValue(pageOf(2));
+    const user = userEvent.setup();
+
+    render(
+      <InfiniteList
+        initialItems={catalog.slice(0, 20)}
+        initialPage={1}
+        initialHasMore
+        total={catalog.length}
+        filters={{ q: "", types: ["grass", "fire"] }}
+      />,
+    );
+
+    await user.click(loadMoreButton());
+
+    // Excecao a regra da suite (assercao sobre o DOM, nao sobre a chamada): o
+    // filtro perdido no caminho so aparece no conteudo da fatia, que aqui e um
+    // duble. Sem esta assercao, a fatia 2 volta a chegar sem filtro nenhum.
+    await waitFor(() =>
+      expect(loadPokemonPageMock).toHaveBeenCalledWith(2, { q: "", types: ["grass", "fire"] }),
+    );
+  });
+
+  test("os cards levam os tipos marcados para o link de volta", () => {
+    render(
+      <InfiniteList
+        initialItems={catalog.slice(0, 20)}
+        initialPage={1}
+        initialHasMore
+        total={catalog.length}
+        filters={{ q: "", types: ["grass", "fire"] }}
+      />,
+    );
+
+    expect(screen.getByRole("link", { name: "Especie1, numero 1" })).toHaveAttribute(
+      "href",
+      "/pokemon/especie1?type=grass,fire",
+    );
+  });
+
   test("a URL acompanha as fatias carregadas sem empilhar historico", async () => {
     loadPokemonPageMock.mockResolvedValue(pageOf(2));
     const user = userEvent.setup();
@@ -182,7 +223,7 @@ describe("InfiniteList", () => {
         initialPage={1}
         initialHasMore
         total={catalog.length}
-        filters={{ q: "especie", type: "grass" }}
+        filters={{ q: "especie", types: ["grass"] }}
       />,
     );
 
@@ -222,7 +263,7 @@ describe("InfiniteList", () => {
         initialPage={1}
         initialHasMore={false}
         total={0}
-        filters={{ q: "digimon" }}
+        filters={{ q: "digimon", types: [] }}
         emptyDescription='Nada combina com "digimon".'
         emptyAction={<Link href="/">Limpar filtros</Link>}
       />,

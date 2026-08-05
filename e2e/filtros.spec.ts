@@ -1,19 +1,28 @@
 import { expect, test, type Page } from "@playwright/test";
 
-import { announcedTotal, cards, listSize, resultsArea, searchInput, typeFilter } from "./locators";
+import {
+  announcedTotal,
+  cards,
+  listSize,
+  resultsArea,
+  searchInput,
+  selectTypes,
+  typeFilter,
+  typeOption,
+} from "./locators";
 import { holdRequests, isFilterNavigation } from "./network";
 
 /**
  * O que prova o filtro nao e a grade encolher — e *todo* card que sobrou
- * carregar o badge do tipo escolhido. Contagem crua passaria verde num filtro
- * que corta a lista pelo criterio errado.
+ * carregar o badge de um dos tipos escolhidos. Contagem crua passaria verde num
+ * filtro que corta a lista pelo criterio errado.
  */
 
 test("filtrar por tipo deixa na tela apenas cards com aquele badge", async ({ page }) => {
   await page.goto("/");
   await expect.poll(() => listSize(page)).toBe(20);
 
-  await typeFilter(page).selectOption("fire");
+  await selectTypes(page, ["fire"]);
 
   await expect(page).toHaveURL("/?type=fire");
 
@@ -29,17 +38,71 @@ test("filtrar por tipo deixa na tela apenas cards com aquele badge", async ({ pa
   }
 });
 
+test("dois tipos marcados sao uniao: todo card tem um badge ou o outro", async ({ page }) => {
+  await page.goto("/");
+  await expect.poll(() => listSize(page)).toBe(20);
+
+  await selectTypes(page, ["fire"]);
+  await expect(page).toHaveURL("/?type=fire");
+  const somenteFire = await announcedTotal(page);
+
+  await selectTypes(page, ["water"]);
+  await expect(page).toHaveURL("/?type=fire,water");
+
+  const total = await announcedTotal(page);
+  // Marcar mais amplia — se reduzisse, o filtro seria intersecao com uma UI que
+  // promete o contrario.
+  expect(total).toBeGreaterThan(somenteFire);
+  await expect(cards(page)).toHaveCount(total);
+
+  const vazados = await cards(page).evaluateAll(
+    (elementos) =>
+      elementos.filter((elemento) => {
+        const badges = [...elemento.querySelectorAll("li")].map((li) => li.textContent?.trim());
+        return !badges.includes("fire") && !badges.includes("water");
+      }).length,
+  );
+
+  expect(vazados).toBe(0);
+});
+
+test("marcar caixas so navega quando o dropdown fecha", async ({ page }) => {
+  await page.goto("/");
+  await expect.poll(() => listSize(page)).toBe(20);
+
+  await typeFilter(page).click();
+  await typeOption(page, "fire").click();
+  await typeOption(page, "water").click();
+
+  // Navegar por caixa seriam quatro round-trips e quatro remounts da lista para
+  // quem marca quatro tipos. A lista atras do dropdown continua a completa.
+  await expect(page).toHaveURL("/");
+  expect(await listSize(page)).toBe(20);
+
+  await page.keyboard.press("Escape");
+
+  await expect(page).toHaveURL("/?type=fire,water");
+  await expect(typeFilter(page)).toHaveText(/2 tipos/);
+});
+
 /**
- * Tipos oferecidos pelo `<select>`, sem a saida para a lista completa.
+ * Tipos oferecidos pelo filtro.
  *
- * A barra de filtros chega em streaming, entao a espera pelo controle visivel
- * vem antes: sem ela a leitura pega o `<select>` ainda vazio.
+ * A barra chega em streaming, entao a espera pelo gatilho visivel vem antes:
+ * sem ela a leitura pega o dropdown ainda inexistente.
  */
 async function offeredTypes(page: Page): Promise<string[]> {
   await expect(typeFilter(page)).toBeVisible();
 
-  const opcoes = await typeFilter(page).getByRole("option").allTextContents();
-  return opcoes.filter((texto) => texto !== "Todos os tipos");
+  await typeFilter(page).click();
+  // O nome do tipo esta no `<label>` ao lado; o `id` da caixa e o mesmo dado,
+  // legivel sem depender de como o rotulo foi associado.
+  const tipos = await page
+    .getByRole("checkbox")
+    .evaluateAll((boxes) => boxes.map((box) => box.id.replace(/^type-/, "")));
+  await page.keyboard.press("Escape");
+
+  return tipos;
 }
 
 test("o filtro nao oferece tipo que nenhum pokemon do catalogo tem", async ({ page }) => {
@@ -48,7 +111,7 @@ test("o filtro nao oferece tipo que nenhum pokemon do catalogo tem", async ({ pa
   const tipos = await offeredTypes(page);
 
   // `stellar` (geracao 9), `unknown` e `shadow` existem no `GET /type` e nao
-  // pertencem a nenhum dos 100 primeiros: no `<select>` seriam opcao morta.
+  // pertencem a nenhum dos 100 primeiros: no dropdown seriam caixa morta.
   expect(tipos).not.toContain("stellar");
   expect(tipos).not.toContain("unknown");
   expect(tipos).not.toContain("shadow");
@@ -61,11 +124,10 @@ test("nenhuma opcao do filtro leva ao estado vazio sozinha", async ({ page }) =>
   const tipos = await offeredTypes(page);
   expect(tipos.length).toBeGreaterThan(0);
 
-  // A generalizacao da story: e este teste que pega a proxima geracao de tipos
-  // antes do usuario, em vez de alguem descobrir por acaso.
+  // A generalizacao da story 21: e este teste que pega a proxima geracao de
+  // tipos antes do usuario, em vez de alguem descobrir por acaso.
   for (const tipo of tipos) {
-    await typeFilter(page).selectOption(tipo);
-    await expect(page).toHaveURL(`/?type=${tipo}`);
+    await page.goto(`/?type=${tipo}`);
     await expect(cards(page).first()).toBeVisible();
   }
 });
@@ -77,7 +139,7 @@ test("tipo desconhecido colado na URL nao filtra, em vez de esvaziar a lista", a
   // ignorado. Antes de a lista ser estreitada, `stellar` era "valido" e caia no
   // estado vazio.
   await expect.poll(() => listSize(page)).toBe(20);
-  await expect(typeFilter(page)).toHaveValue("");
+  await expect(typeFilter(page)).toHaveText(/Todos os tipos/);
   await expect(page.getByText("Nenhum pokemon encontrado")).toBeHidden();
 });
 
@@ -90,11 +152,31 @@ test("busca e tipo se cruzam em vez de um substituir o outro", async ({ page }) 
   }
 });
 
+test("busca cruza com varios tipos: nome E (tipo OU tipo)", async ({ page }) => {
+  await page.goto("/?q=char&type=fire,water");
+
+  // `char` bate os tres charmanders (fire); squirtle e water mas nao bate o
+  // nome. Sao dois niveis de combinacao diferentes e deliberados.
+  await expect(cards(page)).toHaveCount(3);
+  await expect(page.getByRole("heading", { name: "Squirtle" })).toBeHidden();
+});
+
+test("URL colada fora da ordem canonica renderiza o mesmo estado", async ({ page }) => {
+  await page.goto("/?type=water,fire");
+
+  await expect(typeFilter(page)).toHaveText(/2 tipos/);
+
+  await typeFilter(page).click();
+  await expect(typeOption(page, "fire")).toBeChecked();
+  await expect(typeOption(page, "water")).toBeChecked();
+  await expect(typeOption(page, "grass")).not.toBeChecked();
+});
+
 test("combinacao impossivel cai no estado vazio, e limpar restaura a lista", async ({ page }) => {
-  await page.goto("/?q=pikachu&type=water");
+  await page.goto("/?q=pikachu&type=water,rock");
 
   await expect(page.getByText("Nenhum pokemon encontrado")).toBeVisible();
-  await expect(page.getByText('Nada combina com "pikachu" no tipo water.')).toBeVisible();
+  await expect(page.getByText('Nada combina com "pikachu" nos tipos rock, water.')).toBeVisible();
 
   // Os dois links que levam a listagem limpa tem nomes distintos, entao o teste
   // volta a dizer *qual* deles foi exercitado: este e o do estado vazio.
@@ -119,7 +201,7 @@ test("o limpar da barra de filtros tambem restaura a lista", async ({ page }) =>
 test("limpar filtros zera os controles na hora e avisa que a lista recarrega", async ({ page }) => {
   await page.goto("/?q=char&type=fire");
   await expect(searchInput(page)).toHaveValue("char");
-  await expect(typeFilter(page)).toHaveValue("fire");
+  await expect(typeFilter(page)).toHaveText(/fire/);
 
   // Segura a navegacao para o intervalo "limpou, mas o servidor ainda nao
   // respondeu" ficar parado enquanto as assercoes rodam. E justamente esse
@@ -131,7 +213,7 @@ test("limpar filtros zera os controles na hora e avisa que a lista recarrega", a
   // A URL ainda e a filtrada — a transicao a segura —, e mesmo assim os
   // controles ja mostram o estado escolhido.
   await expect(searchInput(page)).toHaveValue("");
-  await expect(typeFilter(page)).toHaveValue("");
+  await expect(typeFilter(page)).toHaveText(/Todos os tipos/);
   await expect(resultsArea(page)).toHaveAttribute("aria-busy", "true");
 
   release();
@@ -148,5 +230,30 @@ test("URL com busca, tipo e pagina colada direto renderiza o estado certo", asyn
   // clampada em vez de virar erro.
   await expect(cards(page)).toHaveCount(3);
   await expect(searchInput(page)).toHaveValue("char");
-  await expect(typeFilter(page)).toHaveValue("fire");
+  await expect(typeFilter(page)).toHaveText(/fire/);
+});
+
+test("rolar com varios tipos marcados nao vaza item de outro tipo na fatia 2", async ({ page }) => {
+  // Tres tipos do preenchimento do mock: juntos passam de uma fatia, que e o
+  // que faz o scroll infinito entrar em cena com o filtro ativo.
+  const escolhidos = ["normal", "ground", "water"];
+  await page.goto(`/?type=${escolhidos.join(",")}`);
+  await expect.poll(() => listSize(page)).toBe(20);
+
+  await page.getByRole("button", { name: "Carregar mais" }).scrollIntoViewIfNeeded();
+  await expect.poll(() => listSize(page)).toBeGreaterThan(20);
+
+  // Leitura num passo so: sob virtualizacao, percorrer por indice com um `await`
+  // por card deixa a rolagem desmontar a linha no meio da conferencia.
+  const vazados = await cards(page).evaluateAll(
+    (elementos, tipos) =>
+      elementos.filter((elemento) => {
+        const badges = [...elemento.querySelectorAll("li")].map((li) => li.textContent?.trim());
+        return !badges.some((badge) => tipos.includes(badge ?? ""));
+      }).length,
+    escolhidos,
+  );
+
+  expect(await cards(page).count()).toBeGreaterThan(0);
+  expect(vazados).toBe(0);
 });

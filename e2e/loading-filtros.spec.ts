@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 
-import { cards, listSize, searchInput, typeFilter } from "./locators";
+import { cards, listSize, searchInput, selectTypes, typeFilter, typeOption } from "./locators";
 import { holdRequests, isFilterNavigation } from "./network";
 
 /**
@@ -53,11 +53,46 @@ test("enquanto a navegacao nao volta, o campo continua editavel e com foco", asy
   await expect(cards(page).first().getByRole("heading", { name: "Pikachu" })).toBeVisible();
 });
 
+test("fechar o dropdown de tipos com mudanca acende o indicador", async ({ page }) => {
+  await page.goto("/");
+  await expect.poll(() => listSize(page)).toBe(20);
+
+  const release = await holdRequests(page, isFilterNavigation);
+
+  await selectTypes(page, ["fire", "water"]);
+
+  // A navegacao sai no fechamento, entao e la que o feedback precisa aparecer —
+  // marcar caixas sozinho nao pede nada ao servidor.
+  await expect(pendingIndicator(page)).toBeVisible();
+  await expect(resultsArea(page)).toHaveAttribute("aria-busy", "true");
+
+  release();
+
+  await expect(page).toHaveURL("/?type=fire,water");
+  await expect(pendingIndicator(page)).toHaveCount(0);
+});
+
+test("fechar o dropdown sem mudar nada nao acende o indicador", async ({ page }) => {
+  await page.goto("/?type=fire");
+  await expect(cards(page).first()).toBeVisible();
+
+  await typeFilter(page).click();
+  // Marcar e desmarcar volta ao conjunto da URL: nada mudou para o servidor
+  // dizer, entao nao ha por que navegar nem piscar spinner.
+  await typeOption(page, "water").click();
+  await typeOption(page, "water").click();
+  await page.keyboard.press("Escape");
+
+  await expect(page).toHaveURL("/?type=fire");
+  await expect(pendingIndicator(page)).toHaveCount(0);
+  await expect(resultsArea(page)).toHaveAttribute("aria-busy", "false");
+});
+
 test("navegacao de filtro que resolve sozinha nao deixa o indicador aceso", async ({ page }) => {
   await page.goto("/");
   await expect.poll(() => listSize(page)).toBe(20);
 
-  await typeFilter(page).selectOption("fire");
+  await selectTypes(page, ["fire"]);
 
   await expect(page).toHaveURL("/?type=fire");
   // O anti-flash em si (100ms de atraso na animacao) vive no CSS e nao tem

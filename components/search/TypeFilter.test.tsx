@@ -35,8 +35,7 @@ function setup(initialUrl = "/") {
   const user = userEvent.setup();
 
   render(
-    // O "Limpar filtros" entra junto: o reset otimista do `<select>` vem dele,
-    // e sem o par nao ha como exercitar a limpeza pelo caminho real.
+    // O "Limpar filtros" entra junto: o reset otimista do controle vem dele.
     <FilterTransitionProvider>
       <TypeFilter types={TYPES} />
       <ClearFiltersAction />
@@ -46,120 +45,202 @@ function setup(initialUrl = "/") {
   return user;
 }
 
-const select = () => screen.getByLabelText("Filtrar por tipo");
+const trigger = () => screen.getByRole("button", { name: "Filtrar por tipo" });
+const option = (name: string) => screen.getByRole("checkbox", { name });
 const clearFilters = () => screen.getByRole("link", { name: "Limpar filtros" });
+
+/** Fecha o popover como o usuario fecha: Esc. E o que dispara a navegacao. */
+async function close(user: ReturnType<typeof userEvent.setup>) {
+  await user.keyboard("{Escape}");
+}
 
 beforeEach(() => {
   navigations.length = 0;
 });
 
 describe("TypeFilter", () => {
-  test("o controle e alcancavel pelo rotulo visivel", () => {
+  test("o controle e alcancavel pelo rotulo, mesmo com o texto do gatilho mudando", () => {
     setup();
 
-    expect(select()).toBeInTheDocument();
+    // Nome acessivel fixo: o rotulo visivel varia com a selecao, e um nome que
+    // muda faz o leitor de tela anunciar um controle diferente a cada mexida.
+    expect(trigger()).toBeInTheDocument();
+    expect(screen.getByLabelText("Filtrar por tipo")).toBe(trigger());
   });
 
-  test("oferece uma opcao por tipo, mais a saida para a lista completa", () => {
+  test("sem filtro o gatilho diz que nada esta filtrado", () => {
     setup();
 
-    const opcoes = screen.getAllByRole("option");
-
-    expect(opcoes).toHaveLength(TYPES.length + 1);
-    expect(opcoes.map((opcao) => opcao.textContent)).toEqual([
-      "Todos os tipos",
-      "grass",
-      "fire",
-      "water",
-      "electric",
-    ]);
+    expect(trigger()).toHaveTextContent("Todos os tipos");
   });
 
-  test("o valor inicial vem da URL", () => {
+  test("com um tipo na URL o gatilho mostra o tipo", () => {
     setup("/?type=fire");
 
-    expect(select()).toHaveValue("fire");
+    expect(trigger()).toHaveTextContent("fire");
   });
 
-  test("URL sem filtro comeca em todos os tipos", () => {
-    setup();
+  test("com varios tipos na URL o gatilho conta em vez de listar", () => {
+    setup("/?type=fire,water");
 
-    expect(select()).toHaveValue("");
+    expect(trigger()).toHaveTextContent("2 tipos");
   });
 
-  test("escolher um tipo leva a URL para a listagem filtrada", async () => {
+  test("abrir oferece uma caixa por tipo, com as da URL ja marcadas", async () => {
+    const user = setup("/?type=fire");
+
+    await user.click(trigger());
+
+    expect(screen.getAllByRole("checkbox")).toHaveLength(TYPES.length);
+    expect(option("fire")).toBeChecked();
+    expect(option("water")).not.toBeChecked();
+  });
+
+  test("marcar caixas nao navega enquanto o dropdown esta aberto", async () => {
     const user = setup();
 
-    await user.selectOptions(select(), "water");
+    await user.click(trigger());
+    await user.click(option("fire"));
+    await user.click(option("water"));
 
-    expect(window.location.search).toBe("?type=water");
+    // Navegar por caixa seriam quatro round-trips e quatro remounts da lista
+    // para quem marca quatro tipos.
+    expect(navigations).toEqual([]);
+    expect(option("fire")).toBeChecked();
+    expect(option("water")).toBeChecked();
   });
 
-  test("filtrar a partir de uma pagina avancada volta para o inicio da lista", async () => {
-    const user = setup("/?page=3");
+  test("fechar com o conjunto alterado navega uma vez so", async () => {
+    const user = setup();
 
-    await user.selectOptions(select(), "water");
+    await user.click(trigger());
+    await user.click(option("fire"));
+    await user.click(option("water"));
+    await close(user);
 
-    expect(window.location.search).toBe("?type=water");
+    expect(navigations).toEqual(["/?type=fire,water"]);
   });
 
-  test("filtrar preserva a busca ja digitada", async () => {
+  test("a ordem na URL e a do catalogo, nao a de clique", async () => {
+    const user = setup();
+
+    await user.click(trigger());
+    await user.click(option("water"));
+    await user.click(option("fire"));
+    await close(user);
+
+    // `fire` vem antes de `water` em `TYPES`. Sem a ordem canonica, clicar na
+    // ordem inversa geraria outra URL para o mesmo resultado.
+    expect(new URLSearchParams(window.location.search).get("type")).toBe("fire,water");
+  });
+
+  test("fechar sem mexer em nada nao navega", async () => {
+    const user = setup("/?type=fire");
+
+    await user.click(trigger());
+    await close(user);
+
+    expect(navigations).toEqual([]);
+  });
+
+  test("desmarcar tudo e fechar tira o filtro da URL", async () => {
+    const user = setup("/?type=fire");
+
+    await user.click(trigger());
+    await user.click(option("fire"));
+    await close(user);
+
+    expect(window.location.search).toBe("");
+    expect(navigations).toEqual(["/"]);
+  });
+
+  test("filtrar preserva a busca e volta para o inicio da lista", async () => {
     const user = setup("/?q=pika&page=2");
 
-    await user.selectOptions(select(), "electric");
+    await user.click(trigger());
+    await user.click(option("electric"));
+    await close(user);
 
     const params = new URLSearchParams(window.location.search);
 
     expect(params.get("q")).toBe("pika");
     expect(params.get("type")).toBe("electric");
+    // Sem isso o usuario filtraria e cairia numa fatia que o novo conjunto nem tem.
     expect(params.get("page")).toBeNull();
   });
 
-  test("voltar para todos os tipos tira o filtro da URL", async () => {
-    const user = setup("/?type=fire");
+  test("limpar tipos desmarca tudo sem fechar o dropdown", async () => {
+    const user = setup("/?type=fire,water");
 
-    await user.selectOptions(select(), "");
+    await user.click(trigger());
+    await user.click(screen.getByRole("button", { name: "Limpar tipos" }));
 
-    expect(window.location.search).toBe("");
-    expect(navigations).toEqual(["/"]);
+    expect(option("fire")).not.toBeChecked();
+    expect(option("water")).not.toBeChecked();
+    expect(navigations).toEqual([]);
+  });
+
+  test("sem nada marcado nao ha o que limpar", async () => {
+    const user = setup();
+
+    await user.click(trigger());
+
+    expect(screen.queryByRole("button", { name: "Limpar tipos" })).not.toBeInTheDocument();
   });
 
   test("a selecao aparece imediatamente, sem esperar o servidor responder", async () => {
     const user = setup();
 
-    await user.selectOptions(select(), "fire");
+    await user.click(trigger());
+    await user.click(option("fire"));
+    await close(user);
 
-    expect(select()).toHaveValue("fire");
+    expect(trigger()).toHaveTextContent("fire");
   });
 
-  test("o controle nunca e bloqueado durante a navegacao", async () => {
+  test("URL mudando por fora re-sincroniza o controle", async () => {
+    const user = setup("/?type=fire");
+
+    await user.click(trigger());
+    expect(option("fire")).toBeChecked();
+    await close(user);
+
+    // Voltar do navegador: a URL manda de novo.
+    window.history.replaceState(null, "", "/?type=water");
+    await user.click(trigger());
+
+    expect(option("fire")).not.toBeChecked();
+    expect(option("water")).toBeChecked();
+  });
+
+  test("limpar filtros zera o controle antes de a URL mudar", async () => {
+    const user = setup("/?type=fire,water");
+    expect(trigger()).toHaveTextContent("2 tipos");
+
+    await user.click(clearFilters());
+
+    expect(trigger()).toHaveTextContent("Todos os tipos");
+  });
+
+  test("Esc fecha o dropdown e devolve o foco ao gatilho", async () => {
     const user = setup();
 
-    await user.selectOptions(select(), "fire");
+    await user.click(trigger());
+    expect(screen.getAllByRole("checkbox")).toHaveLength(TYPES.length);
 
-    expect(select()).toBeEnabled();
+    await close(user);
+
+    expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
+    expect(trigger()).toHaveFocus();
   });
 
-  test("limpar filtros volta para todos os tipos antes de a URL mudar", async () => {
-    const user = setup("/?type=fire");
-    expect(select()).toHaveValue("fire");
+  test("o gatilho nunca e bloqueado durante a navegacao", async () => {
+    const user = setup();
 
-    await user.click(clearFilters());
+    await user.click(trigger());
+    await user.click(option("fire"));
+    await close(user);
 
-    // Vale *antes* do commit da URL: enquanto a transicao segura a URL antiga, o
-    // `<select>` continuaria mostrando `fire` se dependesse so do searchParams.
-    expect(select()).toHaveValue("");
-    expect(navigations).toEqual(["/"]);
-  });
-
-  test("a limpeza sobrevive ao commit da URL, sem o tipo antigo voltar", async () => {
-    const user = setup("/?type=fire");
-
-    await user.click(clearFilters());
-
-    // O mock do router ja escreveu `/` na location; o ajuste de sincronia com a
-    // URL nao pode desfazer o reset otimista ao rodar de novo.
-    expect(window.location.search).toBe("");
-    expect(select()).toHaveValue("");
+    expect(trigger()).toBeEnabled();
   });
 });

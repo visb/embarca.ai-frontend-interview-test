@@ -42,23 +42,34 @@ describe("loadPokemonPage", () => {
   });
 
   test("filtra antes de fatiar, entao rolar e recarregar nunca divergem", async () => {
-    const result = await loadPokemonPage(1, { q: "especie1", type: "grass" });
+    const result = await loadPokemonPage(1, { q: "especie1", types: ["grass"] });
 
-    const expected = paginate(applyFilters(catalog, { q: "especie1", type: "grass" }), 1);
+    const expected = paginate(applyFilters(catalog, { q: "especie1", types: ["grass"] }), 1);
 
     expect(result.items).toEqual(expected.items);
     expect(result.total).toBe(expected.total);
   });
 
+  test("varios tipos chegam ao servidor pelo mesmo pipeline da renderizacao", async () => {
+    const result = await loadPokemonPage(1, { types: ["grass", "fire"] });
+
+    const expected = paginate(applyFilters(catalog, { types: ["grass", "fire"] }), 1);
+
+    // O pipeline `filtrar -> paginar` e um so: rolar com dois tipos marcados e
+    // recarregar a mesma URL nao podem divergir.
+    expect(result.items).toEqual(expected.items);
+    expect(result.total).toBe(expected.total);
+  });
+
   test("o total anunciado e o do conjunto filtrado, nao o do catalogo inteiro", async () => {
-    const result = await loadPokemonPage(1, { type: "fire" });
+    const result = await loadPokemonPage(1, { types: ["fire"] });
 
     expect(result.total).toBe(20);
     expect(result.total).toBeLessThan(catalog.length);
   });
 
   test("conjunto filtrado que cabe numa fatia encerra a lista de uma vez", async () => {
-    const result = await loadPokemonPage(1, { type: "fire" });
+    const result = await loadPokemonPage(1, { types: ["fire"] });
 
     expect(result.items).toHaveLength(20);
     expect(result.hasMore).toBe(false);
@@ -86,10 +97,16 @@ describe("loadPokemonPage", () => {
   });
 
   test("tipo desconhecido vindo do cliente e neutralizado, nao esvazia a lista", async () => {
-    const result = await loadPokemonPage(1, { type: "banana" });
+    const result = await loadPokemonPage(1, { types: "banana" });
 
     expect(result.total).toBe(100);
     expect(result.items).toEqual(catalog.slice(0, 20));
+  });
+
+  test("tipo desconhecido no meio de tipos validos nao amplia nem zera", async () => {
+    const result = await loadPokemonPage(1, { types: ["fire", "banana"] });
+
+    expect(result.total).toBe(20);
   });
 
   test("busca com espacos sobrando e normalizada antes de filtrar", async () => {

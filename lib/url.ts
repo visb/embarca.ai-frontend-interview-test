@@ -1,9 +1,10 @@
 /** Montagem das URLs da listagem. Compartilhado por busca, filtro e paginacao. */
 
-/** Params que a listagem entende. `null`/`""` removem a chave. */
+/** Params que a listagem entende. `null`/`""`/`[]` removem a chave. */
 export interface ListingParams {
   q?: string | null;
-  type?: string | null;
+  /** Multiplos tipos viram `fire,water` — lista num param, nao param repetido. */
+  type?: string[] | string | null;
   page?: string | number | null;
 }
 
@@ -23,7 +24,9 @@ export function buildQuery(current: URLSearchParams | string, patch: ListingPara
   }
 
   for (const [key, value] of Object.entries(patch)) {
-    const normalized = value === null || value === undefined ? "" : String(value).trim();
+    // Array vazio cai na mesma regra de `""`: a chave some da URL.
+    const raw = Array.isArray(value) ? value.join(",") : value;
+    const normalized = raw === null || raw === undefined ? "" : String(raw).trim();
     if (normalized === "") {
       params.delete(key);
     } else {
@@ -35,7 +38,9 @@ export function buildQuery(current: URLSearchParams | string, patch: ListingPara
     params.delete("page");
   }
 
-  return params.toString();
+  // `URLSearchParams` escapa a virgula, mas ela e sub-delimitador valido numa
+  // query: `?type=fire,water` e legivel e colavel, `?type=fire%2Cwater` nao.
+  return params.toString().replaceAll("%2C", ",");
 }
 
 /** Query string -> href da listagem, com `/` como URL canonica da pagina 1. */

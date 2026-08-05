@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 
-import { parsePageParam, parseQueryParam, parseTypeParam } from "@/lib/search-params";
+import { parsePageParam, parseQueryParam, parseTypeParams } from "@/lib/search-params";
 
 const KNOWN_TYPES = ["grass", "poison", "fire", "water", "electric"];
 
@@ -68,32 +68,52 @@ describe("parseQueryParam", () => {
   });
 });
 
-describe("parseTypeParam", () => {
+describe("parseTypeParams", () => {
   test("tipo conhecido passa", () => {
-    expect(parseTypeParam("fire", KNOWN_TYPES)).toBe("fire");
+    expect(parseTypeParams("fire", KNOWN_TYPES)).toEqual(["fire"]);
+  });
+
+  test("varios tipos separados por virgula viram lista", () => {
+    expect(parseTypeParams("fire,water", KNOWN_TYPES)).toEqual(["fire", "water"]);
+  });
+
+  test("a ordem e a do catalogo, nao a da URL", () => {
+    // Sem isso `?type=fire,water` e `?type=water,fire` seriam URLs diferentes
+    // para o mesmo resultado, duplicando cache e quebrando assercao de URL.
+    expect(parseTypeParams("water,fire", KNOWN_TYPES)).toEqual(
+      parseTypeParams("fire,water", KNOWN_TYPES),
+    );
+  });
+
+  test("duplicata e lixo saem sem virar erro", () => {
+    expect(parseTypeParams("fire,banana,fire", KNOWN_TYPES)).toEqual(["fire"]);
   });
 
   test("tipo fora da lista conhecida e descartado", () => {
-    expect(parseTypeParam("banana", KNOWN_TYPES)).toBeUndefined();
+    expect(parseTypeParams("banana", KNOWN_TYPES)).toEqual([]);
   });
 
   test("param ausente nao filtra", () => {
-    expect(parseTypeParam(undefined, KNOWN_TYPES)).toBeUndefined();
+    expect(parseTypeParams(undefined, KNOWN_TYPES)).toEqual([]);
   });
 
   test("so espacos nao filtra", () => {
-    expect(parseTypeParam("  ", KNOWN_TYPES)).toBeUndefined();
+    expect(parseTypeParams("  ", KNOWN_TYPES)).toEqual([]);
+  });
+
+  test("so virgulas nao filtra", () => {
+    expect(parseTypeParams(",,,", KNOWN_TYPES)).toEqual([]);
   });
 
   test("normaliza caixa e espacos antes de validar", () => {
-    expect(parseTypeParam("  FIRE ", KNOWN_TYPES)).toBe("fire");
+    expect(parseTypeParams(" FIRE , Water ", KNOWN_TYPES)).toEqual(["fire", "water"]);
   });
 
   test("param repetido na URL usa a primeira ocorrencia", () => {
-    expect(parseTypeParam(["water", "fire"], KNOWN_TYPES)).toBe("water");
+    expect(parseTypeParams(["water", "fire"], KNOWN_TYPES)).toEqual(["water"]);
   });
 
   test("lista de tipos vazia recusa qualquer valor", () => {
-    expect(parseTypeParam("fire", [])).toBeUndefined();
+    expect(parseTypeParams("fire", [])).toEqual([]);
   });
 });

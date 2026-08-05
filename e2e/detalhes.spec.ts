@@ -33,7 +33,7 @@ test("voltar do detalhe preserva a busca e o tipo da listagem de origem", async 
 
   await expect(page).toHaveURL("/?q=char&type=fire");
   await expect(searchInput(page)).toHaveValue("char");
-  await expect(typeFilter(page)).toHaveValue("fire");
+  await expect(typeFilter(page)).toHaveText(/fire/);
 });
 
 test("nome inexistente mostra a pagina de nao encontrado", async ({ page }) => {

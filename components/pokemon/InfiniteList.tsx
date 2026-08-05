@@ -16,7 +16,7 @@ interface InfiniteListProps {
   initialPage: number;
   initialHasMore: boolean;
   total: number;
-  filters: { q: string; type?: string };
+  filters: { q: string; types: string[] };
   emptyDescription?: string;
   emptyAction?: ReactNode;
 }
@@ -84,10 +84,10 @@ export function InfiniteList({
     () =>
       buildQuery("", {
         q: filters.q || null,
-        type: filters.type ?? null,
+        type: filters.types,
         page: page > 1 ? page : null,
       }),
-    [filters.q, filters.type, page],
+    [filters.q, filters.types, page],
   );
 
   return (

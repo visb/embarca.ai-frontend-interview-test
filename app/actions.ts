@@ -4,7 +4,7 @@ import { getPokemonCatalog, getTypes } from "@/lib/api/pokemon";
 import type { PokemonSummary } from "@/lib/api/types";
 import { applyFilters } from "@/lib/filters";
 import { paginate } from "@/lib/pagination";
-import { parsePageParam, parseQueryParam, parseTypeParam } from "@/lib/search-params";
+import { parsePageParam, parseQueryParam, parseTypeParams } from "@/lib/search-params";
 
 export interface PokemonPage {
   items: PokemonSummary[];
@@ -27,18 +27,21 @@ export interface PokemonPage {
  */
 export async function loadPokemonPage(
   page: number,
-  filters: { q?: string; type?: string },
+  filters: { q?: string; types?: string[] | string },
 ): Promise<PokemonPage> {
   const [catalog, types] = await Promise.all([getPokemonCatalog(), getTypes()]);
 
   // O cliente pode mandar qualquer coisa: tudo passa pelos mesmos parsers da URL.
   const q = parseQueryParam(filters.q);
-  const type = parseTypeParam(
-    filters.type,
+  const selectedTypes = parseTypeParams(
+    Array.isArray(filters.types) ? filters.types.join(",") : filters.types,
     types.map((entry) => entry.name),
   );
 
-  const result = paginate(applyFilters(catalog, { q, type }), parsePageParam(String(page)));
+  const result = paginate(
+    applyFilters(catalog, { q, types: selectedTypes }),
+    parsePageParam(String(page)),
+  );
 
   return {
     items: result.items,

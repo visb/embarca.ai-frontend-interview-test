@@ -118,14 +118,15 @@ app/                      Rotas do App Router
 components/
   pokemon/                Card, grid, detalhe, badge de tipo, contador
   search/                 Input de busca, filtro de tipo, barra de filtros
-  ui/                     Paginação, estado vazio, skeleton, link de volta
+  ui/                     Estado vazio, skeleton, link de volta, popover e checkbox (shadcn)
 lib/
   api/                    Única camada com I/O: http, tipos, mappers, serviços
-  filters.ts, search.ts   Filtro por tipo e busca por nome (puros)
+  filters.ts, search.ts   Filtro por tipos e busca por nome (puros)
   grid.ts                 Colunas da grade por largura de viewport (pura)
   pagination.ts           Paginação em memória (pura)
   search-params.ts        Normalização dos parâmetros de URL (pura)
   url.ts                  Montagem das query strings da listagem (pura)
+  utils.ts                `cn` do shadcn (clsx + tailwind-merge)
 e2e/                      Specs do Playwright
   erros/                  Caminho de erro (projeto `chromium-erros`)
   mock-api/               Servidor de fixtures da PokeAPI
@@ -174,6 +175,12 @@ O catálogo já tem os tipos. Cruzar o resultado de `/type/{name}` com a busca a
 inconsistência (dois conjuntos de fontes diferentes) e round-trips extras. `applyFilters` crava a
 ordem **nome → tipo**, e a paginação roda depois — um pipeline só.
 
+O filtro aceita vários tipos, que viajam na URL como `?type=fire,water` — lista num param único,
+sempre na ordem do catálogo de tipos, para a mesma seleção nunca gerar duas URLs. Os tipos
+combinam por **OU** entre si e por **E** com a busca: nome E (tipo OU tipo). A navegação sai ao
+fechar o dropdown, e não a cada checkbox — marcar quatro tipos seriam quatro round-trips e quatro
+remounts da lista.
+
 ### 6. Paginação em memória, não `offset` na API
 
 Com busca ou filtro ativos, o `offset` da PokeAPI deixa de bater com o conjunto exibido. Um
@@ -183,6 +190,13 @@ caminho único de paginação evita duas implementações divergentes.
 
 CSS Modules ou styled-components exigiriam trocar o que o `create-next-app` já entregou
 configurado, sem ganho para o tamanho deste projeto.
+
+A UI é hand-rolled, com **uma exceção cirúrgica**: `shadcn/ui` (Radix) entrou para o dropdown de
+tipos — `Popover` e `Checkbox`, só isso. O que se compra são foco preso, `Esc` fecha, clique fora
+fecha e `aria-expanded`/`aria-controls` corretos, em vez de reimplementar gerenciamento de foco à
+mão. O que se paga são `clsx`, `tailwind-merge`, `cva` e os pacotes Radix. Os tokens do shadcn
+apontam para o mesmo zinc do resto da UI, e o `dark:` continua vindo de `prefers-color-scheme` —
+o `init` troca essa estratégia por classe, o que apagaria o tema escuro de tudo que já existia.
 
 ### 8. Virtual list na grade — e o ganho aqui é **teórico**
 
@@ -218,7 +232,9 @@ O desenho que sustenta isso:
   mente. Como as 100 rotas válidas são prerenderizadas, o caso só ocorre em URL digitada à mão.
 - Escopo fixo em 100 pokémons.
 - Busca sem tolerância a erro de digitação (substring simples).
-- Filtro de tipo é seleção única, não múltipla.
+- Os tipos marcados combinam por **OU**, sem alternativa na interface: `fire` + `water` mostra
+  quem tem um ou outro. Interseção reduziria a cada marca (o inverso do que as checkboxes
+  sugerem) e, num catálogo de 100, quase toda combinação de dois tipos cairia no estado vazio.
 - **O Ctrl+F do navegador não acha card fora da viewport**, e **imprimir a página sai truncado** —
   só o que está montado existe no DOM. São as perdas clássicas de qualquer virtualização; para
   busca, o caminho suportado é o `?q=` da própria aplicação.

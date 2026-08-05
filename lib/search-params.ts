@@ -40,14 +40,28 @@ export function parseQueryParam(value: SearchParamValue): string {
 }
 
 /**
- * `?type=` -> tipo valido ou `undefined`. Valida contra a lista real de tipos
- * em vez de confiar na URL, entao `?type=banana` simplesmente nao filtra.
+ * `?type=fire,water` -> tipos validos, ou `[]`. Valida contra a lista real de
+ * tipos em vez de confiar na URL, entao `?type=banana` simplesmente nao filtra.
+ *
+ * Lista separada por virgula num param unico, e nao param repetido: `buildQuery`
+ * e construido sobre `params.set()` (chave unica) e a URL fica curta, colavel e
+ * legivel nos testes.
+ *
+ * A saida sai **na ordem de `knownTypes`**, nao na ordem de clique: sem isso
+ * `?type=fire,water` e `?type=water,fire` seriam URLs diferentes para o mesmo
+ * resultado, duplicando cache e quebrando as assercoes de URL no e2e.
  */
-export function parseTypeParam(
-  value: SearchParamValue,
-  knownTypes: readonly string[],
-): string | undefined {
-  const raw = firstValue(value)?.trim().toLowerCase();
-  if (!raw) return undefined;
-  return knownTypes.includes(raw) ? raw : undefined;
+export function parseTypeParams(value: SearchParamValue, knownTypes: readonly string[]): string[] {
+  const raw = firstValue(value);
+  if (!raw) return [];
+
+  const requested = new Set(
+    raw
+      .split(",")
+      .map((entry) => entry.trim().toLowerCase())
+      .filter(Boolean),
+  );
+
+  // Percorrer `knownTypes` resolve ordem canonica e duplicata de uma vez so.
+  return knownTypes.filter((type) => requested.has(type));
 }

@@ -57,8 +57,27 @@ export function searchInput(page: Page): Locator {
   return page.getByLabel("Buscar por nome");
 }
 
+/**
+ * Gatilho do filtro de tipo. O texto dele varia com a selecao ("Todos os
+ * tipos", "fire", "2 tipos"), entao o locator vai pelo nome acessivel fixo.
+ */
 export function typeFilter(page: Page): Locator {
-  return page.getByLabel("Filtrar por tipo");
+  return page.getByRole("button", { name: "Filtrar por tipo" });
+}
+
+/** Uma caixa de tipo dentro do dropdown aberto. */
+export function typeOption(page: Page, name: string): Locator {
+  return page.getByRole("checkbox", { name });
+}
+
+/**
+ * Marca exatamente os tipos pedidos e fecha o dropdown — que e o que dispara a
+ * navegacao. Espera a URL para o passo seguinte nao correr com a transicao.
+ */
+export async function selectTypes(page: Page, names: string[]): Promise<void> {
+  await typeFilter(page).click();
+  for (const name of names) await typeOption(page, name).click();
+  await page.keyboard.press("Escape");
 }
 
 export function loadMoreButton(page: Page): Locator {

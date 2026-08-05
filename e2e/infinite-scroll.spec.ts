@@ -6,8 +6,8 @@ import {
   listSize,
   loadMoreButton,
   scrollToMiddle,
+  selectTypes,
   tabUntilFocused,
-  typeFilter,
 } from "./locators";
 import { holdRequests, isSliceRequest } from "./network";
 
@@ -147,7 +147,7 @@ test("filtrar depois de rolar reseta a lista sem misturar o conjunto anterior", 
   await page.goto("/?page=2");
   await expect.poll(() => listSize(page)).toBe(40);
 
-  await typeFilter(page).selectOption("fire");
+  await selectTypes(page, ["fire"]);
 
   await expect(page).toHaveURL("/?type=fire");
   // Bulbasaur estava na tela e nao e do tipo fire: se sobrar, o que o filtro

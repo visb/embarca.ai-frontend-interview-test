@@ -8,6 +8,7 @@ import {
   loadMoreButton,
   searchInput,
   tabUntilFocused,
+  typeFilter,
   waitForHydration,
 } from "./locators";
 import { holdRequests, isSliceRequest } from "./network";
@@ -51,6 +52,41 @@ for (const route of ROUTES) {
     ).toEqual([]);
   });
 }
+
+test("o dropdown de tipos aberto nao tem violacao serious nem critical", async ({ page }) => {
+  await page.goto("/");
+  await expect(cards(page).first()).toBeVisible();
+
+  // Estado que as rotas acima nao alcancam: o popover so existe depois do
+  // clique, entao a auditoria dele precisa de um teste proprio.
+  await typeFilter(page).click();
+  await expect(page.getByRole("checkbox").first()).toBeVisible();
+
+  const { violations } = await new AxeBuilder({ page }).analyze();
+  const graves = violations.filter(
+    (violation) => violation.impact === "serious" || violation.impact === "critical",
+  );
+
+  expect(
+    graves.map((violation) => `${violation.impact} ${violation.id}: ${violation.nodes[0]?.html}`),
+  ).toEqual([]);
+});
+
+test("Esc fecha o dropdown de tipos e devolve o foco ao gatilho", async ({ page }) => {
+  await page.goto("/");
+  await expect(cards(page).first()).toBeVisible();
+
+  await typeFilter(page).click();
+  await expect(page.getByRole("checkbox").first()).toBeVisible();
+  expect(await focusRingWidth(page)).not.toBe("0px");
+
+  await page.keyboard.press("Escape");
+
+  // Perder o foco para o `body` ao fechar deixaria quem navega por teclado sem
+  // lugar na pagina.
+  await expect(page.getByRole("checkbox")).toHaveCount(0);
+  await expect(typeFilter(page)).toBeFocused();
+});
 
 test("os dois links de limpar filtros tem nomes acessiveis distintos", async ({ page }) => {
   await page.goto("/?q=zzzz");

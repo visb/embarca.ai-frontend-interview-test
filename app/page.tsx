@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { CATALOG_SIZE, getPokemonCatalog, getTypes } from "@/lib/api/pokemon";
 import { applyFilters } from "@/lib/filters";
 import { paginateCumulative } from "@/lib/pagination";
-import { parsePageParam, parseQueryParam, parseTypeParam } from "@/lib/search-params";
+import { parsePageParam, parseQueryParam, parseTypeParams } from "@/lib/search-params";
 import { SITE_DESCRIPTION, SITE_NAME } from "@/lib/site";
 
 /**
@@ -75,12 +75,12 @@ async function PokemonResults({ searchParams }: Pick<PageProps<"/">, "searchPara
   const [catalog, types] = await Promise.all([getPokemonCatalog(), getTypes()]);
 
   const q = parseQueryParam(params.q);
-  const type = parseTypeParam(
+  const selectedTypes = parseTypeParams(
     params.type,
     types.map((entry) => entry.name),
   );
 
-  const filtered = applyFilters(catalog, { q, type });
+  const filtered = applyFilters(catalog, { q, types: selectedTypes });
   // Acumulado, nao a fatia: com scroll infinito o `?page=N` diz quantas fatias
   // ja foram carregadas — e o que devolve o usuario ao ponto certo ao voltar.
   const result = paginateCumulative(filtered, parsePageParam(params.page));
@@ -89,13 +89,13 @@ async function PokemonResults({ searchParams }: Pick<PageProps<"/">, "searchPara
     // O `key` reseta o que o scroll anexou quando o conjunto muda: itens de
     // filtros diferentes nunca convivem na mesma lista.
     <InfiniteList
-      key={`${q}|${type ?? ""}`}
+      key={`${q}|${selectedTypes.join(",")}`}
       initialItems={result.items}
       initialPage={result.page}
       initialHasMore={result.hasMore}
       total={result.total}
-      filters={{ q, type }}
-      emptyDescription={buildEmptyDescription(q, type)}
+      filters={{ q, types: selectedTypes }}
+      emptyDescription={buildEmptyDescription(q, selectedTypes)}
       // Mesmo componente da barra de filtros: limpar daqui tambem zera os
       // controles na hora e liga o spinner, em vez de navegar em silencio.
       //
@@ -113,9 +113,17 @@ async function PokemonResults({ searchParams }: Pick<PageProps<"/">, "searchPara
   );
 }
 
-function buildEmptyDescription(q: string, type?: string): string {
-  if (q && type) return `Nada combina com "${q}" no tipo ${type}.`;
+function buildEmptyDescription(q: string, types: string[]): string {
+  // Plural so quando ha mais de um tipo: "nos tipos fire" leria mal.
+  const label = types.join(", ");
+  const noun = types.length > 1 ? "nos tipos" : "no tipo";
+
+  if (q && types.length) return `Nada combina com "${q}" ${noun} ${label}.`;
   if (q) return `Nada combina com "${q}".`;
-  if (type) return `Nenhum pokemon do tipo ${type} nesta lista.`;
+  if (types.length) {
+    return types.length > 1
+      ? `Nenhum pokemon dos tipos ${label} nesta lista.`
+      : `Nenhum pokemon do tipo ${label} nesta lista.`;
+  }
   return "Tente outro termo ou volte para a lista completa.";
 }

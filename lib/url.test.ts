@@ -30,6 +30,30 @@ describe("buildQuery", () => {
     expect(buildQuery("q=pika&type=fire", { type: null })).toBe("q=pika");
   });
 
+  test("varios tipos viram uma lista separada por virgula", () => {
+    // Lista num param unico, e nao param repetido: `params.set()` e chave unica,
+    // e a URL fica curta e colavel.
+    expect(asParams(buildQuery("", { type: ["fire", "water"] }))).toEqual({
+      type: "fire,water",
+    });
+  });
+
+  test("a virgula sai literal na URL, e nao escapada", () => {
+    // `?type=fire%2Cwater` funciona e e ilegivel; a virgula e sub-delimitador
+    // valido numa query.
+    expect(buildQuery("", { type: ["fire", "water"] })).toBe("type=fire,water");
+  });
+
+  test("lista de tipos vazia some da URL, igual a string vazia", () => {
+    expect(buildQuery("q=pika&type=fire,water", { type: [] })).toBe("q=pika");
+  });
+
+  test("mexer nos tipos continua zerando a pagina", () => {
+    expect(asParams(buildQuery("page=3&type=fire", { type: ["fire", "water"] }))).toEqual({
+      type: "fire,water",
+    });
+  });
+
   test("params nao tocados sao preservados", () => {
     expect(asParams(buildQuery("q=pika&type=electric", { q: "rai" }))).toEqual({
       q: "rai",
