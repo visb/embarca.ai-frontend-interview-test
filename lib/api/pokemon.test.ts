@@ -119,17 +119,85 @@ describe("getPokemonByName", () => {
 });
 
 describe("getTypes", () => {
-  test("nao oferece tipos que nenhum pokemon da pokedex possui", async () => {
-    pokeApiFetchMock.mockResolvedValue({
-      count: 4,
-      results: [
-        { name: "fire", url: "https://pokeapi.co/api/v2/type/10/" },
-        { name: "unknown", url: "https://pokeapi.co/api/v2/type/10001/" },
-        { name: "shadow", url: "https://pokeapi.co/api/v2/type/10002/" },
-        { name: "water", url: "https://pokeapi.co/api/v2/type/11/" },
-      ],
+  /**
+   * Responde o `/type` com os nomes pedidos e o catalogo com um pokemon por
+   * conjunto de tipos — e o cruzamento dos dois que a funcao faz.
+   */
+  function stubTypes(typeNames: string[], catalogTypes: string[][]) {
+    pokeApiFetchMock.mockImplementation(async (path: string) => {
+      if (path === "/type") {
+        return {
+          count: typeNames.length,
+          results: typeNames.map((name) => ({
+            name,
+            url: `https://pokeapi.co/api/v2/type/${name}/`,
+          })),
+        };
+      }
+
+      if (path.startsWith("/pokemon?")) {
+        return {
+          count: catalogTypes.length,
+          next: null,
+          previous: null,
+          results: catalogTypes.map((_, index) => ({
+            name: `especie${index + 1}`,
+            url: `https://pokeapi.co/api/v2/pokemon/${index + 1}/`,
+          })),
+        };
+      }
+
+      const id = Number(path.slice("/pokemon/".length));
+      return makeDetailResponse({
+        id,
+        name: `especie${id}`,
+        types: makeTypeSlots(catalogTypes[id - 1]),
+        sprites: makeSprites(id),
+      });
     });
+  }
+
+  test("nao oferece tipos que nenhum pokemon do catalogo possui", async () => {
+    // `stellar` e o caso real: tipo da geracao 9, legitimo na API, ausente dos
+    // 100 primeiros pokemons. Escolhe-lo levava sempre ao estado vazio.
+    stubTypes(
+      ["fire", "stellar", "water", "unknown", "shadow", "electric"],
+      [["fire"], ["water"], ["electric"]],
+    );
+
+    await expect(getTypes()).resolves.toEqual([
+      { name: "fire" },
+      { name: "water" },
+      { name: "electric" },
+    ]);
+  });
+
+  test("a ordem e a da API, que e a ordem canonica das opcoes", async () => {
+    // Nem alfabetica nem a do catalogo: mudar a ordem mexeria na UI sem pedido.
+    stubTypes(["water", "fire", "grass"], [["grass"], ["fire"], ["water"]]);
+
+    const types = await getTypes();
+
+    expect(types.map((type) => type.name)).toEqual(["water", "fire", "grass"]);
+  });
+
+  test("tipo de um unico pokemon continua na lista: a regra e existir, nao ser comum", async () => {
+    stubTypes(["fire", "ghost"], [["fire"], ["fire"], ["ghost"]]);
+
+    await expect(getTypes()).resolves.toEqual([{ name: "fire" }, { name: "ghost" }]);
+  });
+
+  test("caixa diferente entre os dois endpoints nao derruba o tipo", async () => {
+    // Os mappers normalizam os dois lados; sem isso o cruzamento perderia o
+    // tipo em silencio e a opcao sumiria do filtro.
+    stubTypes(["Fire", "water"], [["FIRE"], ["water"]]);
 
     await expect(getTypes()).resolves.toEqual([{ name: "fire" }, { name: "water" }]);
+  });
+
+  test("catalogo vazio devolve lista vazia, sem estourar", async () => {
+    stubTypes(["fire", "water"], []);
+
+    await expect(getTypes()).resolves.toEqual([]);
   });
 });

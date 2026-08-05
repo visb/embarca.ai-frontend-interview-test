@@ -35,9 +35,18 @@ export function pickSpriteUrl(sprites: PokemonSprites): string | null {
   return sprites.other?.["official-artwork"]?.front_default ?? sprites.front_default ?? null;
 }
 
-/** Nomes dos tipos ordenados por `slot` (a API nao garante a ordem). */
+/**
+ * Nomes dos tipos ordenados por `slot` (a API nao garante a ordem).
+ *
+ * Caixa normalizada aqui, e nao em quem compara: o nome do tipo e chave em tres
+ * lugares (`filterByType`, `parseTypeParam` e o cruzamento de `getTypes` com o
+ * catalogo), e cada um resolvendo caixa por conta propria e um jeito de eles
+ * divergirem.
+ */
 export function mapTypes(detail: PokemonDetailResponse): string[] {
-  return [...detail.types].sort((a, b) => a.slot - b.slot).map((entry) => entry.type.name);
+  return [...detail.types]
+    .sort((a, b) => a.slot - b.slot)
+    .map((entry) => entry.type.name.toLowerCase());
 }
 
 export function toPokemonSummary(detail: PokemonDetailResponse): PokemonSummary {
@@ -64,6 +73,7 @@ export function toPokemonDetail(detail: PokemonDetailResponse): PokemonDetail {
   };
 }
 
+/** Mesma normalizacao de caixa de `mapTypes` — os dois lados sao comparados. */
 export function toPokemonType(resource: NamedApiResource): PokemonType {
-  return { name: resource.name };
+  return { name: resource.name.toLowerCase() };
 }

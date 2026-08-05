@@ -7,6 +7,7 @@ import {
   pickSpriteUrl,
   toPokemonDetail,
   toPokemonSummary,
+  toPokemonType,
 } from "@/lib/api/mappers";
 import {
   makeAbilitySlots,
@@ -83,6 +84,15 @@ describe("mapTypes", () => {
 
     expect(types.map((entry) => entry.type.name)).toEqual(["flying", "normal"]);
   });
+
+  test("normaliza a caixa do nome do tipo", () => {
+    // O nome do tipo e chave em `filterByType`, em `parseTypeParam` e no
+    // cruzamento de `getTypes` com o catalogo: caixa resolvida em cada um deles
+    // e um jeito de eles divergirem.
+    const detail = makeDetailResponse({ types: makeTypeSlots(["FIRE", "Flying"]) });
+
+    expect(mapTypes(detail)).toEqual(["fire", "flying"]);
+  });
 });
 
 describe("toPokemonSummary", () => {
@@ -138,5 +148,21 @@ describe("toPokemonDetail", () => {
 
     expect(detail.height).toBe(4);
     expect(detail.weight).toBe(60);
+  });
+});
+
+describe("toPokemonType", () => {
+  test("guarda so o nome: a URL do recurso nao serve para nada no filtro", () => {
+    expect(toPokemonType({ name: "fire", url: "https://pokeapi.co/api/v2/type/10/" })).toEqual({
+      name: "fire",
+    });
+  });
+
+  test("normaliza a caixa, igual ao tipo que vem do detalhe", () => {
+    // Os dois lados sao comparados em `getTypes`; normalizar so um perderia o
+    // tipo em silencio.
+    expect(toPokemonType({ name: "Fire", url: "https://pokeapi.co/api/v2/type/10/" })).toEqual({
+      name: "fire",
+    });
   });
 });

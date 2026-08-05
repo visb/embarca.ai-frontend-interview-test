@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 import { announcedTotal, cards, listSize, resultsArea, searchInput, typeFilter } from "./locators";
 import { holdRequests, isFilterNavigation } from "./network";
@@ -27,6 +27,58 @@ test("filtrar por tipo deixa na tela apenas cards com aquele badge", async ({ pa
   for (let index = 0; index < total; index += 1) {
     await expect(cards(page).nth(index).getByText("fire", { exact: true })).toBeVisible();
   }
+});
+
+/**
+ * Tipos oferecidos pelo `<select>`, sem a saida para a lista completa.
+ *
+ * A barra de filtros chega em streaming, entao a espera pelo controle visivel
+ * vem antes: sem ela a leitura pega o `<select>` ainda vazio.
+ */
+async function offeredTypes(page: Page): Promise<string[]> {
+  await expect(typeFilter(page)).toBeVisible();
+
+  const opcoes = await typeFilter(page).getByRole("option").allTextContents();
+  return opcoes.filter((texto) => texto !== "Todos os tipos");
+}
+
+test("o filtro nao oferece tipo que nenhum pokemon do catalogo tem", async ({ page }) => {
+  await page.goto("/");
+
+  const tipos = await offeredTypes(page);
+
+  // `stellar` (geracao 9), `unknown` e `shadow` existem no `GET /type` e nao
+  // pertencem a nenhum dos 100 primeiros: no `<select>` seriam opcao morta.
+  expect(tipos).not.toContain("stellar");
+  expect(tipos).not.toContain("unknown");
+  expect(tipos).not.toContain("shadow");
+  expect(tipos).toEqual(expect.arrayContaining(["fire", "water", "grass", "electric"]));
+});
+
+test("nenhuma opcao do filtro leva ao estado vazio sozinha", async ({ page }) => {
+  await page.goto("/");
+
+  const tipos = await offeredTypes(page);
+  expect(tipos.length).toBeGreaterThan(0);
+
+  // A generalizacao da story: e este teste que pega a proxima geracao de tipos
+  // antes do usuario, em vez de alguem descobrir por acaso.
+  for (const tipo of tipos) {
+    await typeFilter(page).selectOption(tipo);
+    await expect(page).toHaveURL(`/?type=${tipo}`);
+    await expect(cards(page).first()).toBeVisible();
+  }
+});
+
+test("tipo desconhecido colado na URL nao filtra, em vez de esvaziar a lista", async ({ page }) => {
+  await page.goto("/?type=stellar");
+
+  // Mesmo contrato de `?type=banana`: o param nao bate com nenhum tipo real e e
+  // ignorado. Antes de a lista ser estreitada, `stellar` era "valido" e caia no
+  // estado vazio.
+  await expect.poll(() => listSize(page)).toBe(20);
+  await expect(typeFilter(page)).toHaveValue("");
+  await expect(page.getByText("Nenhum pokemon encontrado")).toBeHidden();
 });
 
 test("busca e tipo se cruzam em vez de um substituir o outro", async ({ page }) => {

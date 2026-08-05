@@ -11,8 +11,10 @@ export interface ListingFilters {
  * os tipos, e cruzar dois conjuntos vindos de endpoints diferentes com a busca
  * ativa geraria inconsistencia e chamadas extras.
  *
- * Tipo vazio ou desconhecido devolve a lista intacta — `?type=banana` e
- * ignorado, nao vira erro.
+ * Tipo vazio devolve a lista intacta. Tipo **desconhecido devolve `[]`**, e nao
+ * a lista inteira: sem isso o filtro ficaria incapaz de expressar "nenhum
+ * resultado". Quem neutraliza `?type=banana` antes de chegar aqui e o
+ * `parseTypeParam`, que valida contra os tipos reais e devolve `undefined`.
  */
 export function filterByType<T extends Pick<PokemonSummary, "types">>(
   items: T[],

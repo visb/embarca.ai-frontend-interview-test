@@ -15,12 +15,6 @@ import type {
 export const CATALOG_SIZE = 100;
 
 /**
- * Tipos que a API expoe mas que nao pertencem a nenhum pokemon da pokedex
- * principal — deixa-los no filtro so produziria opcoes que nunca retornam nada.
- */
-const NON_BATTLE_TYPES = new Set(["unknown", "shadow"]);
-
-/**
  * Catalogo normalizado dos 100 primeiros pokemons.
  *
  * `GET /pokemon?limit=100` devolve apenas `{ name, url }` — sem tipo e sem
@@ -78,14 +72,32 @@ export async function getPokemonByName(name: string): Promise<PokemonDetail | nu
   }
 }
 
-/** Tipos disponiveis, usados apenas para popular as opcoes do filtro. */
+/**
+ * Tipos oferecidos pelo filtro: apenas os que existem no catalogo.
+ *
+ * `GET /type` devolve tudo que a API conhece, inclusive o que nenhum pokemon
+ * deste recorte possui — `unknown`, `shadow` e, desde a geracao 9, `stellar`.
+ * Deixa-los no `<select>` cria opcao morta: o usuario escolhe um filtro
+ * legitimo da lista e recebe "nenhum resultado", sem nada indicando que aquela
+ * combinacao era impossivel desde o comeco.
+ *
+ * Por isso a lista e cruzada com o catalogo em vez de excluir nomes fixos: a
+ * PokeAPI ganha tipos a cada geracao, e uma lista hardcoded reabriria o mesmo
+ * bug na proxima. Nao ha custo de rede — as duas funcoes sao `"use cache"` com
+ * `cacheLife("max")` e o catalogo ja e buscado no mesmo render da listagem.
+ *
+ * A ordem e a da API, que e a ordem canonica das `<option>`.
+ */
 export async function getTypes(): Promise<PokemonType[]> {
   "use cache";
   cacheLife("max");
 
-  const response = await pokeApiFetch<TypeListResponse>("/type");
+  const [response, catalog] = await Promise.all([
+    pokeApiFetch<TypeListResponse>("/type"),
+    getPokemonCatalog(),
+  ]);
 
-  return response.results
-    .filter((resource) => !NON_BATTLE_TYPES.has(resource.name))
-    .map(toPokemonType);
+  const inCatalog = new Set(catalog.flatMap((pokemon) => pokemon.types));
+
+  return response.results.map(toPokemonType).filter((type) => inCatalog.has(type.name));
 }
