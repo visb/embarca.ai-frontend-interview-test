@@ -1,92 +1,129 @@
-# Teste Técnico – Desenvolvedor Front-end
+# Pokédex — teste técnico front-end
 
-**Next.js + React + Arquitetura Front-end**
+[![CI](https://github.com/visb/embarca.ai-frontend-interview-test/actions/workflows/ci.yml/badge.svg)](https://github.com/visb/embarca.ai-frontend-interview-test/actions/workflows/ci.yml)
 
-## 🎯 Objetivo
+Aplicação Next.js que consome a [PokeAPI](https://pokeapi.co) e exibe os 100 primeiros pokémons
+com listagem paginada, busca por nome, filtro por tipo e página de detalhes.
 
-Criar uma aplicação Next.js que consuma a PokeAPI e exiba uma experiência completa de listagem, busca, filtros e detalhes de Pokémons, com foco em arquitetura, performance, qualidade de código, experiência do usuário e tomada de decisão técnica.
+O enunciado original do desafio está em [`docs/desafio.md`](./docs/desafio.md). As decisões de
+cada etapa estão registradas em [`stories/`](./stories), uma story por entrega.
 
-O objetivo não é apenas entregar uma tela funcional, mas demonstrar maturidade na construção de uma aplicação front-end escalável, bem organizada e preparada para manutenção.
+**Demo:** _(preenchido na story de deploy — ver [12-deploy-vercel](./stories/12-deploy-vercel.md))_
 
-## 🔗 API a ser utilizada
+## Como rodar
 
-- **Listagem de Pokémons:**
-  `GET https://pokeapi.co/api/v2/pokemon?limit=100&offset=0`
-- **Detalhes de um Pokémon:**
-  `GET https://pokeapi.co/api/v2/pokemon/{name}`
-- **Tipos de Pokémon:**
-  `GET https://pokeapi.co/api/v2/type`
+Requer **Node 22+** e **pnpm 11** (o `packageManager` do `package.json` fixa a versão).
 
-## ✅ Requisitos obrigatórios
+```bash
+pnpm install
+cp .env.example .env.local   # opcional em dev
+pnpm dev
+```
 
-### 1. Listagem de Pokémons
+A única variável de ambiente é `NEXT_PUBLIC_SITE_URL`, usada pelo `metadataBase` para montar as
+URLs absolutas de Open Graph e pelo `sitemap.xml`/`robots.txt`. Em desenvolvimento ela tem
+fallback para `http://localhost:3000`.
 
-- Exibir os 100 primeiros Pokémons
-- Paginar a listagem de 20 em 20
-- Exibir cards contendo: Nome, Imagem, Tipos, Número/ID do Pokémon
-- Implementar estados de Loading, Erro e Lista vazia
+> O primeiro `pnpm build` faz 1 + 100 requisições à PokeAPI para montar o catálogo e
+> prerenderizar as rotas de detalhe. Se a API estiver instável, o build falha — basta repetir.
 
-### 2. Busca e filtros
+## Scripts
 
-- Permitir busca por nome
-- Permitir filtro por tipo de Pokémon
-- Busca deve funcionar junto com filtros
-- Paginação deve se adaptar aos filtros
-- Tratar cenários sem resultado
+| Script                  | O que faz                                        |
+| ----------------------- | ------------------------------------------------ |
+| `pnpm dev`              | Servidor de desenvolvimento                      |
+| `pnpm build`            | Build de produção (prerenderiza as 100 rotas)    |
+| `pnpm start`            | Sobe o build de produção                         |
+| `pnpm run lint`         | ESLint                                           |
+| `pnpm run typecheck`    | `tsc --noEmit`                                   |
+| `pnpm run format`       | Prettier em modo escrita                         |
+| `pnpm run format:check` | Prettier em modo verificação (é o que o CI roda) |
 
-### 3. Página de detalhes
+> No Windows, use `pnpm run lint` — `pnpm lint` pode colidir com o `lint.bat` do Android SDK
+> caso ele esteja no `PATH`.
 
-- Rota: `/pokemon/[name]`
-- Exibir:
-  - Nome
-  - Imagem
-  - Tipos
-  - Habilidades
-  - Até 5 movimentos principais
+## Arquitetura
 
-### 4. Arquitetura e organização
+```
+app/                      Rotas do App Router
+  page.tsx                Listagem: busca + filtro + paginação
+  loading.tsx             Skeleton da listagem
+  error.tsx               Error boundary com retry
+  robots.ts, sitemap.ts   Metadata gerada
+  pokemon/[name]/         Detalhe, com loading, error e not-found próprios
+components/
+  pokemon/                Card, grid, detalhe, badge de tipo, contador
+  search/                 Input de busca, filtro de tipo, barra de filtros
+  ui/                     Paginação, estado vazio, skeleton, link de volta
+lib/
+  api/                    Única camada com I/O: http, tipos, mappers, serviços
+  filters.ts, search.ts   Filtro por tipo e busca por nome (puros)
+  pagination.ts           Paginação em memória (pura)
+  search-params.ts        Normalização dos parâmetros de URL (pura)
+  url.ts                  Montagem das query strings da listagem (pura)
+docs/desafio.md           Enunciado original
+stories/                  Uma story por entrega, com as decisões
+```
 
-- Componentes reutilizáveis
-- Camada de serviços HTTP
-- TypeScript obrigatório
-- Separação entre UI e lógica
-- Estrutura clara de pastas
-- Tratamento consistente de erros
+A regra de separação é simples: **`lib/api/` é o único lugar que faz I/O**, o resto de `lib/` são
+funções puras, e os componentes não têm regra de negócio — recebem dados prontos e renderizam.
 
-### 5. Performance e UX
+## Decisões técnicas
 
-- Uso adequado de recursos do Next.js
-- SEO básico com Head
-- Evitar chamadas desnecessárias
-- Responsividade
-- Feedback visual de carregamento e erro
-- Navegação fluida
+### 1. Server Components + estado na URL, em vez de estado client + React Query
 
-### 6. Testes
+Busca, filtro e página vivem em `?q=`, `?type=` e `?page=`, lidos via `searchParams` no Server
+Component. URL compartilhável, botão voltar funcionando e um único source of truth.
 
-- Cobrir listagem, busca, paginação, detalhes e cenários de erro
+A alternativa — estado em React + React Query — traria um segundo lugar onde a verdade mora, e
+os três controles precisariam se manter sincronizados entre si. O único Client Component com
+estado é o input de busca, e só para o campo responder à digitação sem esperar a rota.
 
-## ⚙️ Tecnologias obrigatórias
+### 2. Renderização: prerender da listagem e das 100 rotas de detalhe
 
-- Next.js v12+
-- React v17+
-- TypeScript
-- CSS Modules, Tailwind ou Styled-components
-- Axios, fetch ou equivalente
-- Ferramenta de testes automatizados
+`generateStaticParams` prerenderiza as 100 páginas de detalhe. Dado de pokédex é imutável, então
+SSR puro pagaria o custo de render a cada request sem nenhum ganho de frescor.
 
-## ✅ Diferenciais
+O shell da listagem também é prerenderizado; só os blocos que dependem de `searchParams` ficam
+atrás de `<Suspense>` e streamam.
 
-- Deploy na Vercel
-- SSR, SSG ou ISR com justificativa
-- Cache de dados
-- Testes end-to-end
-- Storybook
-- Acessibilidade
-- README técnico
-- ESLint, Prettier, Husky
-- Pipeline CI
+### 3. Cache: `cacheComponents` + `use cache` / `cacheLife`
 
----
+Nesta versão do Next o `fetch` **não** é cacheado por default. Sem Cache Components, montar o
+catálogo custaria 1 + 100 requisições **por request**. Com `'use cache'` e `cacheLife('max')` nas
+funções de serviço, o custo é pago uma vez.
 
-Boa sorte e divirta-se! 🧢⚡
+### 4. Catálogo normalizado em memória
+
+`GET /pokemon?limit=100` devolve só `{ name, url }` — sem tipo e sem imagem —, mas o card exige
+os dois. Por isso o catálogo resolve os 100 detalhes uma vez e mantém em memória o modelo de
+domínio (`id`, `name`, `types`, `spriteUrl`). Busca, filtro e paginação operam sobre esse array.
+
+### 5. Filtro em memória, não `/type/{name}`
+
+O catálogo já tem os tipos. Cruzar o resultado de `/type/{name}` com a busca ativa geraria
+inconsistência (dois conjuntos de fontes diferentes) e round-trips extras. `applyFilters` crava a
+ordem **nome → tipo**, e a paginação roda depois — um pipeline só.
+
+### 6. Paginação em memória, não `offset` na API
+
+Com busca ou filtro ativos, o `offset` da PokeAPI deixa de bater com o conjunto exibido. Um
+caminho único de paginação evita duas implementações divergentes.
+
+### 7. Tailwind, já presente no scaffold
+
+CSS Modules ou styled-components exigiriam trocar o que o `create-next-app` já entregou
+configurado, sem ganho para o tamanho deste projeto.
+
+## Limitações conhecidas
+
+- **`/pokemon/<nome-inexistente>` responde 200**, não 404, apesar de mostrar a página
+  "não encontrado". Com `cacheComponents` o App Shell é enviado antes de o `notFound()` rodar, e
+  `dynamicParams` — que resolveria — é incompatível com Cache Components. Como as 100 rotas
+  válidas são prerenderizadas, o caso só ocorre em URL digitada à mão.
+- **Sem testes automatizados.** Foram deixados fora do escopo deste projeto; a verificação de
+  cada entrega foi manual, contra o build de produção.
+- Escopo fixo em 100 pokémons, sem scroll infinito.
+- Busca sem tolerância a erro de digitação (substring simples).
+- Filtro de tipo é seleção única, não múltipla.
+- Sem Storybook.
