@@ -3,7 +3,7 @@
 import Link from "next/link";
 import type { MouseEvent } from "react";
 
-import { useFilterTransition } from "@/components/search/FilterTransition";
+import { useFilterTransition } from "@/components/shared/FilterTransition";
 
 interface ClearFiltersActionProps {
   /** Aparencia do ponto de uso: link sublinhado na barra, pilula no estado vazio. */

@@ -3,7 +3,7 @@
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 
-import { useFilterTransition } from "@/components/search/FilterTransition";
+import { useFilterTransition } from "@/components/shared/FilterTransition";
 import { Checkbox } from "@/components/ui/checkbox";
 import { PendingIndicator } from "@/components/ui/PendingIndicator";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";

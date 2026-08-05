@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
 import { ClearFiltersLink } from "@/components/search/ClearFiltersLink";
-import { FilterTransitionProvider } from "@/components/search/FilterTransition";
+import { FilterTransitionProvider } from "@/components/shared/FilterTransition";
 
 const { navigations } = vi.hoisted(() => ({ navigations: [] as string[] }));
 

@@ -1,6 +1,6 @@
 import Image from "next/image";
 
-import { TypeBadge } from "@/components/pokemon/TypeBadge";
+import { TypeBadge } from "@/components/ui/TypeBadge";
 import { MAX_MOVES } from "@/lib/api/mappers";
 import type { PokemonDetail as PokemonDetailModel } from "@/lib/api/types";
 import { formatPokedexNumber, formatPokemonName } from "@/lib/format";

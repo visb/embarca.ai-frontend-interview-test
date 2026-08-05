@@ -4,7 +4,7 @@ import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 import { ClearFiltersAction } from "@/components/search/ClearFiltersAction";
-import { useFilterTransition } from "@/components/search/FilterTransition";
+import { useFilterTransition } from "@/components/shared/FilterTransition";
 
 /**
  * "Limpar filtros" da barra. So aparece quando ha filtro ativo — um botao de

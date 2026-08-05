@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 import {
   FilterTransitionProvider,
   useFilterTransition,
-} from "@/components/search/FilterTransition";
+} from "@/components/shared/FilterTransition";
 
 const { navigations } = vi.hoisted(() => ({ navigations: [] as string[] }));
 

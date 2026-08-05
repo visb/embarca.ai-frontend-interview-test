@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 
-import { useFilterTransition } from "@/components/search/FilterTransition";
+import { useFilterTransition } from "@/components/shared/FilterTransition";
 
 /**
  * Casca cliente fina em volta do resultado: le o pending dos filtros e sinaliza

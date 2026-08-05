@@ -6,7 +6,7 @@ import { PokemonGridSkeleton } from "@/components/pokemon/PokemonGridSkeleton";
 import { ResultsArea } from "@/components/pokemon/ResultsArea";
 import { ClearFiltersAction } from "@/components/search/ClearFiltersAction";
 import { FilterBar } from "@/components/search/FilterBar";
-import { FilterTransitionProvider } from "@/components/search/FilterTransition";
+import { FilterTransitionProvider } from "@/components/shared/FilterTransition";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { CATALOG_SIZE, getPokemonCatalog, getTypes } from "@/lib/api/pokemon";
 import { applyFilters } from "@/lib/filters";

@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import { TypeBadge } from "@/components/pokemon/TypeBadge";
+import { TypeBadge } from "@/components/ui/TypeBadge";
 import type { PokemonSummary } from "@/lib/api/types";
 import { formatPokedexNumber, formatPokemonName } from "@/lib/format";
 

@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, test } from "vitest";
 
-import { TypeBadge } from "@/components/pokemon/TypeBadge";
+import { TypeBadge } from "@/components/ui/TypeBadge";
 
 describe("TypeBadge", () => {
   test("mostra o nome de um tipo conhecido", () => {

@@ -3,7 +3,7 @@
 import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
-import { useFilterTransition } from "@/components/search/FilterTransition";
+import { useFilterTransition } from "@/components/shared/FilterTransition";
 import { buildQuery, listingHref } from "@/lib/url";
 
 /** Espera antes de navegar. Curto o bastante para parecer instantaneo. */

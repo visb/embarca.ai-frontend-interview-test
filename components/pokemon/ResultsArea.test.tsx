@@ -6,7 +6,7 @@ import { ResultsArea } from "@/components/pokemon/ResultsArea";
 import {
   FilterTransitionProvider,
   useFilterTransition,
-} from "@/components/search/FilterTransition";
+} from "@/components/shared/FilterTransition";
 
 // Fronteira do framework: nenhum teste aqui e sobre navegar.
 vi.mock("next/navigation", () => ({
