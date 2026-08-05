@@ -4,8 +4,8 @@ import { hydrateRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 
-import { PokemonGrid } from "@/components/pokemon/PokemonGrid";
-import { VirtualGrid } from "@/components/pokemon/VirtualGrid";
+import { PokemonGrid } from "@/features/catalog/components/PokemonGrid";
+import { VirtualGrid } from "@/features/catalog/components/VirtualGrid";
 import { makeCatalog } from "@/test/fixtures/pokemon";
 
 /**

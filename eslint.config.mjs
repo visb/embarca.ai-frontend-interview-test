@@ -22,7 +22,7 @@ const UI_FILES = ["components/**/*.tsx", "features/**/*.tsx", "app/**/*.tsx"];
  * Novo arquivo NAO entra aqui. Se um codigo novo precisa da excecao, ele
  * precisa e de ser quebrado.
  */
-const OVERSIZED_LEGACY = ["components/pokemon/VirtualGrid.tsx"];
+const OVERSIZED_LEGACY = [];
 
 /**
  * Uma zona por slice: barra import que entra no **interior** de outro slice.

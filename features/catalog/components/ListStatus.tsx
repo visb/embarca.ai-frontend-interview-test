@@ -1,4 +1,4 @@
-import { PokemonGridSkeleton } from "@/components/pokemon/PokemonGridSkeleton";
+import { PokemonGridSkeleton } from "@/features/catalog/components/PokemonGridSkeleton";
 import { PendingIndicator } from "@/components/ui/PendingIndicator";
 
 interface ListStatusProps {

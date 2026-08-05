@@ -1,5 +1,5 @@
 import type { PokemonSummary } from "@/lib/api/types";
-import { filterByName } from "@/lib/search";
+import { filterByName } from "@/features/catalog/lib/search";
 
 export interface ListingFilters {
   q?: string;

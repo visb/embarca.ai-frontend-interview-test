@@ -1,31 +1,33 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 
-import { loadPokemonPage } from "@/app/actions";
-import { ListStatus } from "@/components/pokemon/ListStatus";
-import { LoadMoreSentinel } from "@/components/pokemon/LoadMoreSentinel";
-import { ResultCount } from "@/components/pokemon/ResultCount";
-import { VirtualGrid } from "@/components/pokemon/VirtualGrid";
+import { loadPokemonPage } from "@/features/catalog/actions";
 import type { PokemonSummary } from "@/lib/api/types";
 import { buildQuery } from "@/lib/url";
 
-interface InfiniteListProps {
+interface InfiniteListInput {
   /** Fatias 1..N renderizadas no servidor a partir do `?page=N` da URL. */
   initialItems: PokemonSummary[];
   initialPage: number;
   initialHasMore: boolean;
-  total: number;
   filters: { q: string; types: string[] };
-  emptyDescription?: string;
-  emptyAction?: ReactNode;
+}
+
+interface InfiniteList {
+  items: PokemonSummary[];
+  loading: boolean;
+  error: boolean;
+  hasMore: boolean;
+  /** Query que os cards carregam para o "voltar" do detalhe. Acompanha o cursor. */
+  listingQuery: string;
+  loadMore: () => void;
 }
 
 /**
- * Listagem com scroll infinito.
+ * Acumulo das fatias da listagem.
  *
- * Substitui os controles de paginacao, mas nao o estado de pagina: o `?page=N`
- * continua na URL como cursor de fatias carregadas. Ele e atualizado com
+ * O `?page=N` continua na URL como cursor, mas atualizado com
  * `history.replaceState`, e nao com `router.replace`, de proposito — o cursor e
  * estado do cliente, e uma navegacao do router faria o servidor re-renderizar a
  * lista acumulada inteira a cada rolagem, dobrando o trabalho de cada fatia.
@@ -33,15 +35,12 @@ interface InfiniteListProps {
  * O reset ao trocar busca ou filtro vem do `key` na pagina: o remount limpa o
  * que ja foi anexado, para nao misturar itens de conjuntos diferentes.
  */
-export function InfiniteList({
+export function useInfiniteList({
   initialItems,
   initialPage,
   initialHasMore,
-  total,
   filters,
-  emptyDescription,
-  emptyAction,
-}: InfiniteListProps) {
+}: InfiniteListInput): InfiniteList {
   const [items, setItems] = useState(initialItems);
   const [page, setPage] = useState(initialPage);
   const [hasMore, setHasMore] = useState(initialHasMore);
@@ -78,8 +77,6 @@ export function InfiniteList({
     }
   }, [filters, hasMore, page]);
 
-  // Query levada pelos cards, para o "voltar" do detalhe reabrir a listagem com
-  // os mesmos filtros e o mesmo cursor. Acompanha o cursor atual.
   const listingQuery = useMemo(
     () =>
       buildQuery("", {
@@ -90,36 +87,5 @@ export function InfiniteList({
     [filters.q, filters.types, page],
   );
 
-  return (
-    <div className="flex flex-col gap-4">
-      <ResultCount total={total} shown={items.length} />
-
-      {/*
-        Grade virtual: o scroll infinito continua anexando a fatia inteira ao
-        estado, mas so as linhas visiveis ficam montadas.
-      */}
-      <VirtualGrid
-        items={items}
-        listingQuery={listingQuery}
-        emptyDescription={emptyDescription}
-        emptyAction={emptyAction}
-      />
-
-      {/*
-        `!loading` no `enabled` nao e so guarda: a volta dele para `true` e o
-        que faz o sentinel se rearmar e reavaliar a ancora depois que a fatia
-        entrou no layout. Sem esse ciclo o observer ficaria em silencio com a
-        base ainda visivel.
-      */}
-      <LoadMoreSentinel enabled={hasMore && !error && !loading} onVisible={loadMore}>
-        <ListStatus
-          loading={loading}
-          error={error}
-          hasMore={hasMore}
-          total={total}
-          onLoadMore={loadMore}
-        />
-      </LoadMoreSentinel>
-    </div>
-  );
+  return { items, loading, error, hasMore, listingQuery, loadMore };
 }

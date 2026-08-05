@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { expect, test } from "vitest";
 
-import { ResultCount } from "@/components/pokemon/ResultCount";
+import { ResultCount } from "@/features/catalog/components/ResultCount";
 
 /**
  * Teste de fumaca da pipeline de unit: componente sincrono, alias `@/`,

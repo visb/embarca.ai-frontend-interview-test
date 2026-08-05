@@ -1,5 +1,5 @@
 import { Skeleton } from "@/components/ui/Skeleton";
-import { PER_PAGE } from "@/lib/pagination";
+import { PER_PAGE } from "@/features/catalog/lib/pagination";
 
 interface PokemonGridSkeletonProps {
   count?: number;

@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, test } from "vitest";
 
-import { ListStatus } from "@/components/pokemon/ListStatus";
+import { ListStatus } from "@/features/catalog/components/ListStatus";
 
 const noop = () => {};
 

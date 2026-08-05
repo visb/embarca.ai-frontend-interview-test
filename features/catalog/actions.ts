@@ -2,8 +2,8 @@
 
 import { getPokemonCatalog, getTypes } from "@/lib/api/pokemon";
 import type { PokemonSummary } from "@/lib/api/types";
-import { applyFilters } from "@/lib/filters";
-import { paginate } from "@/lib/pagination";
+import { applyFilters } from "@/features/catalog/lib/filters";
+import { paginate } from "@/features/catalog/lib/pagination";
 import { parsePageParam, parseQueryParam, parseTypeParams } from "@/lib/search-params";
 
 export interface PokemonPage {

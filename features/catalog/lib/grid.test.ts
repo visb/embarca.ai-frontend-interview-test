@@ -1,7 +1,7 @@
 import fc from "fast-check";
 import { describe, expect, test } from "vitest";
 
-import { columnsForWidth, GRID_BREAKPOINTS } from "@/lib/grid";
+import { columnsForWidth, GRID_BREAKPOINTS } from "@/features/catalog/lib/grid";
 
 describe("columnsForWidth", () => {
   /*

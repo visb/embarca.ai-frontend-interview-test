@@ -2,7 +2,7 @@ import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
-import { LoadMoreSentinel } from "@/components/pokemon/LoadMoreSentinel";
+import { LoadMoreSentinel } from "@/features/catalog/components/LoadMoreSentinel";
 
 /**
  * `IntersectionObserver` nao existe no jsdom.

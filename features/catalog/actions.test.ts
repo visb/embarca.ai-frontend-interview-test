@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
-import { loadPokemonPage } from "@/app/actions";
+import { loadPokemonPage } from "@/features/catalog/actions";
 import type * as PokemonService from "@/lib/api/pokemon";
-import { applyFilters } from "@/lib/filters";
-import { paginate } from "@/lib/pagination";
+import { applyFilters } from "@/features/catalog/lib/filters";
+import { paginate } from "@/features/catalog/lib/pagination";
 import { makeCatalog } from "@/test/fixtures/pokemon";
 
 const { getPokemonCatalogMock, getTypesMock } = vi.hoisted(() => ({

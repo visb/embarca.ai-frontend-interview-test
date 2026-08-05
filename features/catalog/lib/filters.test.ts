@@ -1,8 +1,8 @@
 import fc from "fast-check";
 import { describe, expect, test } from "vitest";
 
-import { applyFilters, filterByType } from "@/lib/filters";
-import { filterByName } from "@/lib/search";
+import { applyFilters, filterByType } from "@/features/catalog/lib/filters";
+import { filterByName } from "@/features/catalog/lib/search";
 import { makeSummary } from "@/test/fixtures/pokemon";
 
 const bulbasaur = makeSummary({ id: 1, name: "bulbasaur", types: ["grass", "poison"] });

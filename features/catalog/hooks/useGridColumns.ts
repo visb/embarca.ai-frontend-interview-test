@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import { columnsForWidth, type GridColumns } from "@/lib/grid";
+import { columnsForWidth, type GridColumns } from "@/features/catalog/lib/grid";
 
 /**
  * Medida que decide os breakpoints.

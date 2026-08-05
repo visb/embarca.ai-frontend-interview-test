@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import Link from "next/link";
 import { describe, expect, test } from "vitest";
 
-import { PokemonGrid } from "@/components/pokemon/PokemonGrid";
+import { PokemonGrid } from "@/features/catalog/components/PokemonGrid";
 import { makeCatalog } from "@/test/fixtures/pokemon";
 
 describe("PokemonGrid", () => {

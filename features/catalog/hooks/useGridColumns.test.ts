@@ -1,7 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
-import { useGridColumns } from "@/components/pokemon/useGridColumns";
+import { useGridColumns } from "@/features/catalog/hooks/useGridColumns";
 
 /**
  * `ResizeObserver` controlado pelo teste: guarda os callbacks registrados para

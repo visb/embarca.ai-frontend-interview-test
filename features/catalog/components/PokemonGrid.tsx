@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-import { PokemonCard } from "@/components/pokemon/PokemonCard";
+import { PokemonCard } from "@/features/catalog/components/PokemonCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import type { PokemonSummary } from "@/lib/api/types";
 

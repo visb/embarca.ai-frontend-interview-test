@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 
-import { filterByName } from "@/lib/search";
+import { filterByName } from "@/features/catalog/lib/search";
 import { makeSummary } from "@/test/fixtures/pokemon";
 
 const catalog = [

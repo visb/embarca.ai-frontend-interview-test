@@ -3,15 +3,15 @@ import userEvent from "@testing-library/user-event";
 import Link from "next/link";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
-import type { PokemonPage } from "@/app/actions";
-import { InfiniteList } from "@/components/pokemon/InfiniteList";
+import type { PokemonPage } from "@/features/catalog/actions";
+import { InfiniteList } from "@/features/catalog/components/InfiniteList";
 import { makeCatalog } from "@/test/fixtures/pokemon";
 
 const { loadPokemonPageMock } = vi.hoisted(() => ({ loadPokemonPageMock: vi.fn() }));
 
 // Server Action: fronteira de I/O. O que se verifica adiante e sempre o DOM
 // resultante ou a URL, nunca "a acao foi chamada".
-vi.mock("@/app/actions", () => ({ loadPokemonPage: loadPokemonPageMock }));
+vi.mock("@/features/catalog/actions", () => ({ loadPokemonPage: loadPokemonPageMock }));
 
 /** O jsdom nao tem `IntersectionObserver`; aqui a rolagem nunca dispara sozinha. */
 class SilentIntersectionObserver implements IntersectionObserver {

@@ -1,7 +1,7 @@
 import fc from "fast-check";
 import { describe, expect, test } from "vitest";
 
-import { PER_PAGE, paginate, paginateCumulative } from "@/lib/pagination";
+import { PER_PAGE, paginate, paginateCumulative } from "@/features/catalog/lib/pagination";
 
 /** Lista de inteiros 1..n — o valor de cada item identifica sua posicao. */
 const range = (n: number) => Array.from({ length: n }, (_, index) => index + 1);

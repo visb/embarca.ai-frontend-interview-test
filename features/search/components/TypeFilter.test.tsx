@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
-import { ClearFiltersAction } from "@/features/search/components/ClearFiltersAction";
+import { ClearFiltersAction } from "@/components/shared/ClearFiltersAction";
 import { FilterTransitionProvider } from "@/components/shared/FilterTransition";
 import { TypeFilter } from "@/features/search/components/TypeFilter";
 import type { PokemonType } from "@/lib/api/types";

@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, test } from "vitest";
 
-import { PokemonCard } from "@/components/pokemon/PokemonCard";
+import { PokemonCard } from "@/features/catalog/components/PokemonCard";
 import { makeSummary } from "@/test/fixtures/pokemon";
 
 describe("PokemonCard", () => {
