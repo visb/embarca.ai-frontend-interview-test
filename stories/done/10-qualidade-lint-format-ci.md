@@ -14,7 +14,7 @@ Decisões travadas:
   com `--no-verify`. Teste completo é responsabilidade do CI, não do commit.
 - CI no **GitHub Actions**, em PR e push na branch principal.
 - Trade-off aceito: e2e no CI encarece o pipeline (browser + build). Vale porque a cobertura real
-  dos Server Components mora lá (ver [01-infra-de-testes](./01-infra-de-testes.md)).
+  dos Server Components mora lá (ver [01-infra-de-testes](../01-infra-de-testes.md)).
 
 ## Desenho
 
