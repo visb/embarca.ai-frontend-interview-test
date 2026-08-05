@@ -2,9 +2,9 @@ import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
-import { ClearFiltersAction } from "@/components/search/ClearFiltersAction";
+import { ClearFiltersAction } from "@/features/search/components/ClearFiltersAction";
 import { FilterTransitionProvider } from "@/components/shared/FilterTransition";
-import { SearchInput } from "@/components/search/SearchInput";
+import { SearchInput } from "@/features/search/components/SearchInput";
 
 const { navigations } = vi.hoisted(() => ({ navigations: [] as string[] }));
 

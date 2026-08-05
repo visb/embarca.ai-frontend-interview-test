@@ -3,7 +3,7 @@
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 
-import { ClearFiltersAction } from "@/components/search/ClearFiltersAction";
+import { ClearFiltersAction } from "@/features/search/components/ClearFiltersAction";
 import { useFilterTransition } from "@/components/shared/FilterTransition";
 
 /**

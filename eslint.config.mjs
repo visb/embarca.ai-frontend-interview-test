@@ -22,13 +22,16 @@ const UI_FILES = ["components/**/*.tsx", "features/**/*.tsx", "app/**/*.tsx"];
  * Novo arquivo NAO entra aqui. Se um codigo novo precisa da excecao, ele
  * precisa e de ser quebrado.
  */
-const OVERSIZED_LEGACY = [
-  "components/search/TypeFilter.tsx",
-  "components/pokemon/VirtualGrid.tsx",
-  "components/search/SearchInput.tsx",
-];
+const OVERSIZED_LEGACY = ["components/pokemon/VirtualGrid.tsx"];
 
-/** Uma zona por slice: barra import que atravessa a fronteira de outro slice. */
+/**
+ * Uma zona por slice: barra import que entra no **interior** de outro slice.
+ *
+ * A raiz do slice (`data.ts`, `FilterBar.tsx`, `<Dominio>Page.tsx`) e a
+ * superficie publica e continua importavel — e o que permite a listagem compor a
+ * barra de filtros. O que fica fechado e `lib/`, `hooks/` e `components/`, onde
+ * mora a implementacao.
+ */
 const sliceBoundaries = SLICES.map((slice) => ({
   files: [`features/${slice}/**`],
   rules: {
@@ -37,9 +40,14 @@ const sliceBoundaries = SLICES.map((slice) => ({
       {
         patterns: [
           {
-            group: ["@/features/*/**", `!@/features/${slice}/**`],
+            group: [
+              "@/features/*/lib/**",
+              "@/features/*/hooks/**",
+              "@/features/*/components/**",
+              `!@/features/${slice}/**`,
+            ],
             message:
-              "Slice nao importa o interior de outro slice. Suba o que e comum para `lib/`, `lib/api/` ou `components/ui/`.",
+              "Slice nao importa o interior de outro slice. Use a superficie publica dele, ou suba o que e comum para `lib/`, `lib/api/` ou `components/ui/`.",
           },
         ],
       },
